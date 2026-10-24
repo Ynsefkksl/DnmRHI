@@ -1,0 +1,93 @@
+{
+    "version": 8,
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "ninja-base",
+            "hidden": true,
+            "inherits": "base",
+            "generator": "Ninja"
+        },
+        {
+            "name": "debug",
+            "hidden": true,
+            "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+        },
+        {
+            "name": "release",
+            "hidden": true,
+            "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+        },
+        {
+            "name": "gcc-base",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        },
+        {
+            "name": "gnu-clang-base",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        },
+        {
+            "name": "msvc-env",
+            "hidden": true,
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "architecture": { "value": "x64", "strategy": "external" },
+            "toolset": { "value": "host=x64", "strategy": "external" }
+        },
+        {
+            "name": "msvc-clang-base",
+            "hidden": true,
+            "inherits": "msvc-env",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang-cl",
+                "CMAKE_CXX_COMPILER": "clang-cl"
+            }
+        },
+        {
+            "name": "msvc-base",
+            "hidden": true,
+            "inherits": "msvc-env",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "cl",
+                "CMAKE_CXX_COMPILER": "cl"
+            }
+        },
+
+        { "name": "ninja-gnu-debug",        "inherits": ["ninja-base", "gcc-base", "debug"] },
+        { "name": "ninja-gnu-release",      "inherits": ["ninja-base", "gcc-base", "release"] },
+        { "name": "ninja-clang-debug",      "inherits": ["ninja-base", "gnu-clang-base", "debug"] },
+        { "name": "ninja-clang-release",    "inherits": ["ninja-base", "gnu-clang-base", "release"] },
+        { "name": "ninja-clang-cl-debug",   "inherits": ["ninja-base", "msvc-clang-base", "debug"] },
+        { "name": "ninja-clang-cl-release", "inherits": ["ninja-base", "msvc-clang-base", "release"] },
+        { "name": "ninja-cl-debug",         "inherits": ["ninja-base", "msvc-base", "debug"] },
+        { "name": "ninja-cl-release",       "inherits": ["ninja-base", "msvc-base", "release"] },
+
+        { "name": "gnu-debug",        "inherits": ["gcc-base", "debug"] },
+        { "name": "gnu-release",      "inherits": ["gcc-base", "release"] },
+        { "name": "clang-debug",      "inherits": ["gnu-clang-base", "debug"] },
+        { "name": "clang-release",    "inherits": ["gnu-clang-base", "release"] },
+        { "name": "clang-cl-debug",   "inherits": ["msvc-clang-base", "debug"] },
+        { "name": "clang-cl-release", "inherits": ["msvc-clang-base", "release"] },
+        { "name": "cl-debug",         "inherits": ["msvc-base", "debug"] },
+        { "name": "cl-release",       "inherits": ["msvc-base", "release"] }
+    ]
+}
