@@ -15,6 +15,7 @@ find_package(Vulkan REQUIRED)
 find_package(slang CONFIG REQUIRED)
 find_package(xxHash CONFIG REQUIRED)
 
+option(EXAMPLES "enable examples" ON)
 option(VULKAN_BACKEND "enable vulkan backend" ON)
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     message("d3d12 backend not available on linux")
@@ -40,9 +41,10 @@ if(D3D12_BACKEND)
     list(APPEND Sources ${D3d12Sources})
 endif()
 
-add_library(DnmRHI ${Sources})
+add_library(DnmRHI STATIC ${Sources})
+add_library(DnmRHI::DnmRHI ALIAS DnmRHI)
 
-target_include_directories(DnmRHI PRIVATE 
+target_include_directories(DnmRHI PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/Include
     $ENV{VULKAN_SDK}/include
 )
@@ -61,10 +63,6 @@ target_compile_definitions(DnmRHI PRIVATE
     $<$<PLATFORM_ID:Windows>:DnmRHI_Platform_Win32>
     $<$<PLATFORM_ID:Linux>:DnmRHI_Platform_Linux>
     
-    "DnmRHI_Force_Inline=$<IF:$<CXX_COMPILER_ID:GNU,Clang,AppleClang,IntelLLVM>,__attribute__((always_inline))inline,$<IF:$<CXX_COMPILER_ID:MSVC>,__forceinline,inline>>"
-    "DnmRHI_Restrict=$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang,IntelLLVM,MSVC>:__restrict>"
-    "DnmRHI_Func_Signature=$<IF:$<CXX_COMPILER_ID:GNU,Clang,AppleClang,IntelLLVM>,__PRETTY_FUNCTION__,$<IF:$<CXX_COMPILER_ID:MSVC>,__FUNCSIG__,__func__>>"
-
     $<$<PLATFORM_ID:Windows>:NOMINMAX>
     $<$<PLATFORM_ID:Windows>:UNICODE>
     $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>
@@ -73,4 +71,10 @@ target_compile_definitions(DnmRHI PRIVATE
         
     VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
     VMA_VULKAN_VERSION=1004000
+    VP_USE_OBJECT=1
+    VK_NO_PROTOTYPES=1
 )
+
+if(EXAMPLES)
+    add_subdirectory(Example)
+endif()

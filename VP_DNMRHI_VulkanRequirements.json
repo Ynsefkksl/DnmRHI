@@ -1,0 +1,306 @@
+{
+    "$schema": "https://schema.khronos.org/vulkan/profiles-0.8.2-366.json",
+    "capabilities": {
+        "Baseline": {
+            "extensions": {
+                "VK_EXT_conditional_rendering": 1,
+                "VK_KHR_swapchain": 1,
+                "VK_KHR_surface": 1,
+                "VK_EXT_memory_budget": 1,
+                "VK_EXT_calibrated_timestamps": 1,
+                "VK_EXT_conservative_rasterization": 1,
+                "VK_EXT_descriptor_buffer": 1,
+                "VK_KHR_compute_shader_derivatives": 1,
+                "VK_EXT_mesh_shader": 1,
+                "VK_KHR_ray_query": 1,
+                "VK_KHR_fragment_shading_rate": 1,
+                "VK_KHR_ray_tracing_maintenance1": 1,
+                "VK_KHR_ray_tracing_pipeline": 1,
+                "VK_KHR_acceleration_structure": 1,
+                "VK_KHR_deferred_host_operations": 1
+            },
+            "features": {
+                "VkPhysicalDeviceFeatures" : {
+                    "vertexPipelineStoresAndAtomics" : true,
+                    "fragmentStoresAndAtomics" : true,
+                    "multiDrawIndirect" : true,
+                    "imageCubeArray" : true,
+                    "depthClamp" : true,
+                    "depthBiasClamp" : true,
+                    "shaderCullDistance" : true,
+                    "shaderClipDistance" : true,
+                    "independentBlend" : true,
+                    "inheritedQueries" : true,
+                    "samplerAnisotropy" : true,
+                    "sampleRateShading" : true,
+                    "textureCompressionBC" : true,
+                    "shaderInt16" : true,
+                    "shaderSampledImageArrayDynamicIndexing" : true,
+                    "shaderStorageImageArrayDynamicIndexing" : true,
+                    "shaderUniformBufferArrayDynamicIndexing" : true,
+                    "drawIndirectFirstInstance" : true,
+                    "shaderStorageImageWriteWithoutFormat" : true,
+                    "multiViewport" : true,
+                    "pipelineStatisticsQuery" : true,
+                    "fullDrawIndexUint32" : true,
+                    "shaderInt64" : true
+                },
+                "VkPhysicalDeviceVulkan11Features" : {
+                    "multiview" : true,
+                    "shaderDrawParameters" : true,
+                    "variablePointers" : true,
+                    "variablePointersStorageBuffer" : true,
+                    "storageBuffer16BitAccess" : true
+                },
+                "VkPhysicalDeviceVulkan12Features" : {
+                    "bufferDeviceAddress" : true,
+                    "descriptorBindingPartiallyBound" : true,
+                    "descriptorBindingSampledImageUpdateAfterBind" : true,
+                    "descriptorBindingUniformBufferUpdateAfterBind" : true,
+                    "descriptorBindingStorageImageUpdateAfterBind" : true,
+                    "descriptorBindingUpdateUnusedWhilePending" : true,
+                    "descriptorBindingVariableDescriptorCount" : true,
+                    "descriptorIndexing" : true,
+                    "drawIndirectCount" : true,
+                    "hostQueryReset" : true,
+                    "imagelessFramebuffer" : true,
+                    "runtimeDescriptorArray" : true,
+                    "scalarBlockLayout" : true,
+                    "samplerFilterMinmax" : true,
+                    "samplerMirrorClampToEdge" : true,
+                    "separateDepthStencilLayouts" : true,
+                    "shaderInt8" : true,
+                    "shaderFloat16" : true,
+                    "shaderOutputLayer" : true,
+                    "shaderOutputViewportIndex" : true,
+                    "shaderSampledImageArrayNonUniformIndexing" : true,
+                    "shaderStorageBufferArrayNonUniformIndexing" : true,
+                    "shaderStorageImageArrayNonUniformIndexing" : true,
+                    "shaderUniformBufferArrayNonUniformIndexing" : true,
+                    "shaderSubgroupExtendedTypes" : true,
+                    "storageBuffer8BitAccess" : true,
+                    "subgroupBroadcastDynamicId" : true,
+                    "timelineSemaphore" : true,
+                    "uniformBufferStandardLayout" : true,
+                    "vulkanMemoryModel" : true,
+                    "vulkanMemoryModelDeviceScope" : true
+                },
+                "VkPhysicalDeviceVulkan13Features" : {
+                    "computeFullSubgroups" : true,
+                    "dynamicRendering" : true,
+                    "inlineUniformBlock" : true,
+                    "maintenance4" : true,
+                    "pipelineCreationCacheControl" : true,
+                    "privateData" : true,
+                    "robustImageAccess" : true,
+                    "shaderDemoteToHelperInvocation" : true,
+                    "shaderIntegerDotProduct" : true,
+                    "shaderTerminateInvocation" : true,
+                    "shaderZeroInitializeWorkgroupMemory" : true,
+                    "subgroupSizeControl" : true,
+                    "synchronization2" : true
+                },
+                "VkPhysicalDeviceVulkan14Features" : {
+                    "maintenance5" : true
+                },
+                "VkPhysicalDeviceConditionalRenderingFeaturesEXT" : {
+                    "conditionalRendering" : true
+                },
+                "VkPhysicalDeviceDescriptorBufferFeaturesEXT" : {
+                    "descriptorBuffer": true
+                },
+                "VkPhysicalDeviceMeshShaderFeaturesEXT" : {
+                    "meshShader" : true,
+                    "taskShader" : true,
+                    "primitiveFragmentShadingRateMeshShader" : true
+                },
+                "VkPhysicalDeviceRayQueryFeaturesKHR" : {
+                    "rayQuery" : true
+                },
+                "VkPhysicalDeviceFragmentShadingRateFeaturesKHR" : {
+                    "attachmentFragmentShadingRate" : true,
+                    "pipelineFragmentShadingRate" : true,
+                    "primitiveFragmentShadingRate" : true
+
+                },
+                "VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR" : {
+                    "rayTracingMaintenance1" : true,
+                    "rayTracingPipelineTraceRaysIndirect2" : true
+                },
+                "VkPhysicalDeviceAccelerationStructureFeaturesKHR" : {
+                    "accelerationStructure" : true,
+                    "descriptorBindingAccelerationStructureUpdateAfterBind" : true
+                },
+                "VkPhysicalDeviceRayTracingPipelineFeaturesKHR" : {
+                    "rayTracingPipeline" : true,
+                    "rayTracingPipelineTraceRaysIndirect" : true
+                },
+                "VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR" : {
+                    "computeDerivativeGroupLinear" : true,
+                    "computeDerivativeGroupQuads" : true
+                }
+            },
+            "properties": {
+                "VkPhysicalDeviceVulkan11Properties" : {
+                    "subgroupSupportedOperations" : [ 
+                        "VK_SUBGROUP_FEATURE_BASIC_BIT", 
+                        "VK_SUBGROUP_FEATURE_VOTE_BIT", 
+                        "VK_SUBGROUP_FEATURE_ARITHMETIC_BIT", 
+                        "VK_SUBGROUP_FEATURE_BALLOT_BIT", 
+                        "VK_SUBGROUP_FEATURE_SHUFFLE_BIT", 
+                        "VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT", 
+                        "VK_SUBGROUP_FEATURE_CLUSTERED_BIT", 
+                        "VK_SUBGROUP_FEATURE_QUAD_BIT"
+                    ],
+                    "subgroupSupportedStages" : [ 
+                        "VK_SHADER_STAGE_COMPUTE_BIT", 
+                        "VK_SHADER_STAGE_FRAGMENT_BIT"
+                    ]
+                },
+                "VkPhysicalDeviceVulkan12Properties" : {
+                    "maxPerStageDescriptorUpdateAfterBindStorageImages" : 400000,
+                    "maxPerStageDescriptorUpdateAfterBindSampledImages" : 400000,
+                    "maxPerStageDescriptorUpdateAfterBindSamplers" : 2000,
+                    "maxPerStageDescriptorUpdateAfterBindUniformBuffers" : 400000
+                }
+            }
+        },
+        "DescriptorHeap": {
+            "extensions": {
+                "VK_EXT_descriptor_heap": 1,
+                "VK_KHR_shader_untyped_pointers": 1
+            },
+            "features": {
+                "VkPhysicalDeviceDescriptorHeapFeaturesEXT": {
+                    "descriptorHeap": true
+                },
+                "VkPhysicalDeviceShaderUntypedPointersFeaturesKHR": {
+                    "shaderUntypedPointers": true
+                }
+            }
+        },
+        "PageableDeviceLocalMemory": {
+            "extensions": {
+                "VK_EXT_pageable_device_local_memory": 1,
+                "VK_EXT_memory_priority": 1
+            },
+            "features": {
+                "VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT": {
+                    "pageableDeviceLocalMemory": true
+                },
+                "VkPhysicalDeviceMemoryPriorityFeaturesEXT": {
+                    "memoryPriority": true
+                }
+            }
+        },
+        "UnifiedImageLayouts": {
+            "extensions": {
+                "VK_KHR_unified_image_layouts": 1
+            },
+            "features": {
+                "VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR": {
+                    "unifiedImageLayouts": true
+                }
+            }
+        },
+        "ShaderStecilExport": {
+            "extensions": {
+                "VK_EXT_shader_stencil_export": 1
+            }
+        },
+        "MeshAndTaskShaderDerivatives": {
+            "extensions": {
+                "VK_KHR_compute_shader_derivatives": 1
+            },
+            "properties": {
+                "VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR": {
+                    "meshAndTaskShaderDerivatives": true
+                }
+            }
+        },
+        "Maintenance9": {
+            "extensions": {
+                "VK_KHR_maintenance9": 1
+            },
+            "features": {
+                "VkPhysicalDeviceMaintenance9FeaturesKHR": {
+                    "maintenance9": true
+                }
+            }
+        },
+        "InputOutput16": {
+            "features": {
+                "VkPhysicalDeviceVulkan11Features": {
+                    "storageInputOutput16": true
+                }
+            }
+        },
+        "SwapchainMaintenance1": {
+            "extensions": {
+                "VK_KHR_swapchain_maintenance1": 1,
+                "VK_KHR_surface_maintenance1": 1,
+                "VK_KHR_get_surface_capabilities2": 1
+            },
+            "features": {
+                "VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR": {
+                    "swapchainMaintenance1": true
+                }
+            }
+        },
+        "RayTracingInvocationReorder": {
+            "extensions": {
+                "VK_EXT_ray_tracing_invocation_reorder": 1
+            },
+            "features": {
+                "VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT": {
+                    "rayTracingInvocationReorder": true
+                }
+            }
+        },
+        "OpacityMicromap": {
+            "extensions": {
+                "VK_EXT_opacity_micromap": 1
+            },
+            "features": {
+                "VkPhysicalDeviceOpacityMicromapFeaturesEXT": {
+                    "micromap": true
+                }
+            }
+        }
+    },
+    "profiles": {
+        "VP_DNMRHI_VulkanRequirements": {
+            "version": 1,
+            "api-version": "1.4.000",
+            "label": "DnmRHI Profile",
+            "description": "For DnmRHI",
+            "capabilities": [
+                "Baseline",
+                "DescriptorHeap",
+                "PageableDeviceLocalMemory",
+                "UnifiedImageLayouts",
+                "ShaderStecilExport",
+                "MeshAndTaskShaderDerivatives",
+                "Maintenance9",
+                "InputOutput16",
+                "SwapchainMaintenance1",
+                "RayTracingInvocationReorder",
+                "OpacityMicromap"
+            ]
+        }
+    },
+    "contributors": {
+        "Dnm": {
+            "github": "ynsefkksl",
+            "contact": true
+        }
+    },
+    "history": [
+        {
+            "revision": 1,
+            "date": "2026-10-24",
+            "author": "Dnm",
+            "comment": "Initial revision"
+        }
+    ]
+}

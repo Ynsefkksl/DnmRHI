@@ -3,6 +3,7 @@
 #include <DnmRHI/Common/Subresource.hpp>
 #include <DnmRHI/Shader/EntryPoint.hpp>
 #include <span>
+#include <array>
 
 // TODO: temp
 namespace slang {
@@ -55,16 +56,14 @@ namespace DnmRHI {
         b8 ray_tracing_invocation_reorder: 1;
         b8 opacity_micromap: 1;
 
-        // TODO: more detailed device type
-        b8 is_apu: 1;
         b8 has_rebar: 1;
+        DeviceType device_type;
     };
 
     struct DeviceProperties {
         std::string name;
         // TODO: i can use vendor extensions and libs for more detailed device information(cu, sgpr count etc.) 
         GpuVendor vendor;
-        GraphicsApi api;
         u16 subgroup_size;
         u16 min_subgroup_size;
         u16 max_subgroup_size;
@@ -79,8 +78,15 @@ namespace DnmRHI {
         b8 perfer_fp32_instead_of_fp16:1{};
     };
 
-    std::vector<Device *> EnumarateD3D12Devices(DeviceSettings device_settings, const D3D12Settings &settings);
-    std::vector<Device *> EnumarateVulkanDevices(DeviceSettings device_settings, const VulkanSettings &settings);
+    struct DeviceInfo {
+        DeviceFeatures features;
+        DeviceProperties properties;
+        std::array<u8, 16> device_uuid;
+        std::array<u8, 16> driver_uuid;
+    };
+
+    std::vector<DeviceInfo> QuerySupportedD3D12Devices();
+    std::vector<DeviceInfo> QuerySupportedVulkanDevices();
 
     class Device {
     protected:
@@ -118,9 +124,6 @@ namespace DnmRHI {
         [[nodiscard]] auto IsAmd() const noexcept { return m_device_properties.vendor == GpuVendor::eAmd; }
         [[nodiscard]] auto IsIntel() const noexcept { return m_device_properties.vendor == GpuVendor::eIntel; }
         [[nodiscard]] auto IsQualcomm() const noexcept { return m_device_properties.vendor == GpuVendor::eQualcomm; }
-
-        [[nodiscard]] auto IsVk() const noexcept { return m_device_properties.api == GraphicsApi::eVk; }
-        [[nodiscard]] auto IsD3D12() const noexcept { return m_device_properties.api == GraphicsApi::eD3D12; }
     protected:
         virtual void IInit() noexcept = 0;
 

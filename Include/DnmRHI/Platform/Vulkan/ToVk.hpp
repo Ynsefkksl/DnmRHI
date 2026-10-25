@@ -597,4 +597,13 @@ namespace DnmRHI::Vk {
         return vk_usage;
     }
 
+    [[nodiscard]] constexpr auto To_Vk(DeviceType type) noexcept {
+        switch (type) {
+            case DeviceType::eUnknown: return vk::PhysicalDeviceType::eOther;
+            case DeviceType::eIntegred: return vk::PhysicalDeviceType::eIntegratedGpu;
+            case DeviceType::eDiscrete: return vk::PhysicalDeviceType::eDiscreteGpu;
+            case DeviceType::eVirtual: return vk::PhysicalDeviceType::eVirtualGpu;
+            case DeviceType::eCpu: return vk::PhysicalDeviceType::eCpu;
+        }
+    }
 }

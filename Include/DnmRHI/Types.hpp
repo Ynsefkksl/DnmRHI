@@ -1,5 +1,6 @@
 #pragma once
 
+#include <DnmRHI/Defines.hpp>
 #include <stdfloat>
 #include <type_traits>
 
@@ -100,6 +101,14 @@ namespace DnmRHI {
     enum class ResourceType : u8 {
         eBuffer,
         eImage,
+    };
+
+    enum class DeviceType : u8 {
+        eUnknown,
+        eIntegred,
+        eDiscrete,
+        eVirtual,
+        eCpu
     };
 
     struct Offset2D {

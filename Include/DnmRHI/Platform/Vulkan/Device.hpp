@@ -35,6 +35,12 @@ namespace DnmRHI::Vk {
     };
     
     struct DeviceFeatures {
+        b8 win32_surface: 1;
+        b8 xcb_surface: 1;
+        b8 xlib_surface: 1;
+        b8 wayland_surface: 1;
+        b8 surface_maintenance1: 1;
+
         b8 descirptor_heap: 1;
         b8 shader_stencil_export: 1;
         b8 maintenance9: 1;
@@ -91,7 +97,7 @@ namespace DnmRHI::Vk {
         virtual void ISubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept override;
         virtual void IWaitSemaphore(const WaitSemaphoreDesc &desc) noexcept override;
         virtual void IPresent(const PresentDesc &desc) noexcept override;
-        [[nodiscard]] virtual slang::ISession *CreateCompilerSession(slang::IGlobalSession *global_session) noexcept override;
+        [[nodiscard]] virtual slang::ISession *CreateCompilerSession(slang::IGlobalSession *global_session) noexcept override { return {}; }
 
         [[nodiscard]] auto GetInstance() const noexcept { return m_instance; }
         [[nodiscard]] auto GetPhysicalDevice() const noexcept { return m_physical_device; }
@@ -135,7 +141,7 @@ namespace DnmRHI::Vk {
         }
     private:
         b8 GetInstanceFeatures(std::vector<const char *> &supported_ext, std::vector<const char *> &layers, InstanceFeatures &instance_features);
-        b8 CheckAndGetDeviceFeatures(vk::PhysicalDevice device, std::vector<const char *> &supported_ext, DeviceFeatures &m_device_features, void *&feature_chain);
+        b8 CheckAndGetDeviceFeatures(vk::PhysicalDevice device, std::vector<const char *> &supported_ext, DeviceFeatures &m_device_features, void *&feature_chain) { return false; }
 
         void CreateInstance() noexcept;
         void CreateDevice() noexcept;
