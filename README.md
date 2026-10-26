@@ -2,8 +2,6 @@
 
 A small, low-level RHI (Render Hardware Interface) targeting D3D12 Ultimate-class GPUs.
 
-This project exists to share the code, not to convince anyone to use it.
-
 ## Status
 
 Under active development and not stable. The API may change without notice.
