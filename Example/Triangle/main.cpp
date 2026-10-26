@@ -6,6 +6,13 @@ int main() {
     auto vk_devices = DnmRHI::QuerySupportedVulkanDevices();
     if (vk_devices.empty()) std::println("there is no vulkan supported device");
     for (const auto &device : vk_devices) {
-        std::println("name device name: {}", device.properties.name);
+        std::println("name device: {}", device.properties.name);
+        auto *device_ = DnmRHI::CreateDevice(device, 
+            DnmRHI::DeviceSettings{}
+                .SetDescValidation(true)
+                .SetValidationLayer(true)
+        );
+        device_->Init();
+        delete device_;
     }
 }

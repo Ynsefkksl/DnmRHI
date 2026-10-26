@@ -7,8 +7,8 @@
 
 // TODO: temp
 namespace slang {
-    class ISession;
-    class IGlobalSession;
+    struct ISession;
+    struct IGlobalSession;
 }
 
 namespace DnmRHI {
@@ -31,11 +31,11 @@ namespace DnmRHI {
         std::span<const SemaphoreValueDesc> wait_semaphores;
         std::span<const SemaphoreValueDesc> signal_semaphores;
 
+        constexpr auto &SetCommandBuffer(std::initializer_list<CommandBuffer *const> command_buffer) noexcept { this->command_buffers = command_buffer; return *this; }
         constexpr auto &SetCommandBuffer(std::span<CommandBuffer *const> command_buffer) noexcept { this->command_buffers = command_buffer; return *this; }
         constexpr auto &SetWaitSemaphore(std::span<const SemaphoreValueDesc> wait_semaphore) noexcept { this->wait_semaphores = wait_semaphore; return *this; }
-        constexpr auto &SetSignalSemaphore(std::span<const SemaphoreValueDesc> signal_semaphore) noexcept { this->signal_semaphores = signal_semaphore; return *this; }
-        constexpr auto &SetCommandBuffer(std::initializer_list<CommandBuffer *const> command_buffer) noexcept { this->command_buffers = command_buffer; return *this; }
         constexpr auto &SetWaitSemaphore(std::initializer_list<const SemaphoreValueDesc> wait_semaphore) noexcept { this->wait_semaphores = wait_semaphore; return *this; }
+        constexpr auto &SetSignalSemaphore(std::span<const SemaphoreValueDesc> signal_semaphore) noexcept { this->signal_semaphores = signal_semaphore; return *this; }
         constexpr auto &SetSignalSemaphore(std::initializer_list<const SemaphoreValueDesc> signal_semaphore) noexcept { this->signal_semaphores = signal_semaphore; return *this; }
     };
 
@@ -75,22 +75,40 @@ namespace DnmRHI {
         b8 validation_layer: 1{};
         // this can be broke nsight, rgp etc.
         b8 gpu_assisted_validaiton: 1{};
-        b8 perfer_fp32_instead_of_fp16:1{};
+
+        // even if the feature is not supported, this value can be true, but it does nothing
+        b8 shader_stencil_export: 1{}; 
+        b8 ray_tracing_invocation_reorder: 1{};
+        b8 opacity_micromap: 1{};
+
+        constexpr auto &SetShaderDebug(b8 shader_debug) noexcept { this->shader_debug = shader_debug; return *this; }
+        constexpr auto &SetDescValidation(b8 desc_validation) noexcept { this->desc_validation = desc_validation; return *this; }
+        constexpr auto &SetValidationLayer(b8 validation_layer) noexcept { this->validation_layer = validation_layer; return *this; }
+        constexpr auto &SetGpuAssistedValidation(b8 gpu_assisted_validaiton) noexcept { this->gpu_assisted_validaiton = gpu_assisted_validaiton; return *this; }
+        constexpr auto &SetShaderStencilExport(b8 shader_stencil_export) noexcept { this->shader_stencil_export = shader_stencil_export; return *this; }
+        constexpr auto &SetRayTracingInvocationReorder(b8 ray_tracing_invocation_reorder) noexcept { this->ray_tracing_invocation_reorder = ray_tracing_invocation_reorder; return *this; }
+        constexpr auto &SetOpacityMicromap(b8 opacity_micromap) noexcept { this->opacity_micromap = opacity_micromap; return *this; }
     };
 
     struct DeviceInfo {
+        GraphicsApi api;
         DeviceFeatures features;
         DeviceProperties properties;
         std::array<u8, 16> device_uuid;
         std::array<u8, 16> driver_uuid;
     };
 
-    std::vector<DeviceInfo> QuerySupportedD3D12Devices();
-    std::vector<DeviceInfo> QuerySupportedVulkanDevices();
+    [[nodiscard]] std::vector<DeviceInfo> QuerySupportedD3D12Devices();
+    [[nodiscard]] std::vector<DeviceInfo> QuerySupportedVulkanDevices();
+
+    // device_info must be same with QuerySupported*Devices output
+    [[nodiscard]] Device *CreateD3D12Device(const DeviceInfo &device_info, DeviceSettings device_settings, const D3D12Settings &d3d12_settings);
+    [[nodiscard]] Device *CreateVulkanDevice(const DeviceInfo &device_info, DeviceSettings device_settings, const VulkanSettings &vk_settings);
+    [[nodiscard]] Device *CreateDevice(const DeviceInfo &device_info, DeviceSettings device_settings);
 
     class Device {
     protected:
-        explicit Device(DeviceSettings settings) : m_settings(settings) {}
+        explicit Device(const DeviceInfo &info, DeviceSettings settings) : m_device_info(info), m_settings(settings) {}
     public:
         virtual ~Device();
 
@@ -113,17 +131,18 @@ namespace DnmRHI {
         void WaitSemaphore(const WaitSemaphoreDesc &desc) noexcept;
         void Present(const PresentDesc &desc) noexcept;
 
-        [[nodiscard]] const auto &GetFeatures() const noexcept { return m_device_features; }
-        [[nodiscard]] const auto &GetProperties() const noexcept { return m_device_features; }
+        [[nodiscard]] const auto &GetFeatures() const noexcept { return m_device_info.features; }
+        [[nodiscard]] const auto &GetProperties() const noexcept { return m_device_info.properties; }
+        [[nodiscard]] const auto &GetDeviceInfo() const noexcept { return m_device_info; }
         [[nodiscard]] auto GetSettings() const noexcept { return m_settings; }
 
         [[nodiscard]] auto *GetShaderCompiler() const noexcept { return m_shader_compiler; }
 
         // helpers
-        [[nodiscard]] auto IsNvidia() const noexcept { return m_device_properties.vendor == GpuVendor::eNvidia; }
-        [[nodiscard]] auto IsAmd() const noexcept { return m_device_properties.vendor == GpuVendor::eAmd; }
-        [[nodiscard]] auto IsIntel() const noexcept { return m_device_properties.vendor == GpuVendor::eIntel; }
-        [[nodiscard]] auto IsQualcomm() const noexcept { return m_device_properties.vendor == GpuVendor::eQualcomm; }
+        [[nodiscard]] auto IsNvidia() const noexcept { return m_device_info.properties.vendor == GpuVendor::eNvidia; }
+        [[nodiscard]] auto IsAmd() const noexcept { return m_device_info.properties.vendor == GpuVendor::eAmd; }
+        [[nodiscard]] auto IsIntel() const noexcept { return m_device_info.properties.vendor == GpuVendor::eIntel; }
+        [[nodiscard]] auto IsQualcomm() const noexcept { return m_device_info.properties.vendor == GpuVendor::eQualcomm; }
     protected:
         virtual void IInit() noexcept = 0;
 
@@ -145,8 +164,7 @@ namespace DnmRHI {
         virtual void IPresent(const PresentDesc &desc) noexcept = 0;
         [[nodiscard]] virtual slang::ISession *CreateCompilerSession(slang::IGlobalSession *global_session) noexcept = 0;
 
-        DeviceFeatures m_device_features{};
-        DeviceProperties m_device_properties{};
+        DeviceInfo m_device_info{};
         DeviceSettings m_settings{};
         ShaderCompiler *m_shader_compiler{};
 

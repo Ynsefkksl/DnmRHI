@@ -1,8 +1,30 @@
 #include <DnmRHI/Device/Device.hpp>
+#include <DnmRHI/Device/D3D12Settings.hpp>
+#include <DnmRHI/Device/VulkanSettings.hpp>
 #include <DnmRHI/Shader/Compiler.hpp>
 #include <DnmRHI/Shader/Desc.hpp>
 
 namespace DnmRHI {
+    #if !defined(DnmRHI_Backend_D3D12)
+    [[nodiscard]] Device *CreateD3D12Device(const DeviceInfo &device_info, DeviceSettings device_settings, const D3D12Settings &d3d12_settings) {
+        return nullptr;
+    }
+    #endif
+
+    #if !defined(DnmRHI_Backend_Vulkan)
+        [[nodiscard]] Device *CreateVulkanDevice(const DeviceInfo &device_info, DeviceSettings device_settings, const VulkanSettings &vk_settings) {
+            return nullptr;
+        }
+    #endif
+
+    Device *CreateDevice(const DeviceInfo &device_info, DeviceSettings device_settings) {
+        switch (device_info.api) {
+            case GraphicsApi::eVulkan: return CreateVulkanDevice(device_info, device_settings, {});
+            case GraphicsApi::eD3D12: return CreateD3D12Device(device_info, device_settings, {});
+        }
+        std::unreachable();
+    }
+
     Device::~Device() {
         delete m_shader_compiler;
     }

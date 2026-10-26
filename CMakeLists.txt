@@ -21,7 +21,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     message("d3d12 backend not available on linux")
     set(D3D12_BACKEND OFF)
 else()
-    option(D3D12_BACKEND "enable d3d12 backend" ON)
+    #temp, default value is ON
+    option(D3D12_BACKEND "enable d3d12 backend" OFF)
 endif()
 
 file(GLOB_RECURSE Sources CONFIGURE_DEPENDS
@@ -62,7 +63,7 @@ target_link_libraries(DnmRHI PRIVATE
 target_compile_definitions(DnmRHI PRIVATE
     $<$<PLATFORM_ID:Windows>:DnmRHI_Platform_Win32>
     $<$<PLATFORM_ID:Linux>:DnmRHI_Platform_Linux>
-    
+
     $<$<PLATFORM_ID:Windows>:NOMINMAX>
     $<$<PLATFORM_ID:Windows>:UNICODE>
     $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>
@@ -74,6 +75,14 @@ target_compile_definitions(DnmRHI PRIVATE
     VP_USE_OBJECT=1
     VK_NO_PROTOTYPES=1
 )
+
+if(VULKAN_BACKEND)
+    target_compile_definitions(DnmRHI PRIVATE DnmRHI_Backend_Vulkan)
+endif()
+
+if(D3D12_BACKEND)
+    target_compile_definitions(DnmRHI PRIVATE DnmRHI_Backend_D3D12)
+endif()
 
 if(EXAMPLES)
     add_subdirectory(Example)

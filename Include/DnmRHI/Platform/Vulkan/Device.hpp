@@ -16,6 +16,8 @@
 #define GetVkDeviceProperties GetVkDevice.GetVulkanDeviceProperties()
 #define GetVkDeviceFeatures GetVkDevice.GetVulkanDeviceFeatures()
 
+typedef struct VpFunctions_T *VpFunctions;
+
 namespace DnmRHI::Vk {
     class DescriptorManager;
     class Image;
@@ -27,13 +29,6 @@ namespace DnmRHI::Vk {
     class CommandBuffer;
     class Semaphore;
 
-    struct InstanceFeatures {
-        b8 win32_surface: 1;
-        b8 xcb_surface: 1;
-        b8 wayland_surface: 1;
-        b8 surface_maintenance1: 1;
-    };
-    
     struct DeviceFeatures {
         b8 win32_surface: 1;
         b8 xcb_surface: 1;
@@ -42,17 +37,11 @@ namespace DnmRHI::Vk {
         b8 surface_maintenance1: 1;
 
         b8 descirptor_heap: 1;
-        b8 shader_stencil_export: 1;
         b8 maintenance9: 1;
         b8 pageable_device_local_memory: 1;
         b8 unified_image_layouts: 1;
         b8 input_output_16: 1;
         b8 swapchain_maintenance1: 1;
-        b8 is_apu: 1;
-        b8 has_rebar: 1;
-        b8 mesh_and_task_shader_derivatives: 1;
-        b8 ray_tracing_invocation_reorder: 1;
-        b8 opacity_micromap: 1;
     };
 
     struct DeviceProperties {
@@ -76,7 +65,7 @@ namespace DnmRHI::Vk {
 
     class Device final : public DnmRHI::Device {
     public:
-        explicit Device(DeviceSettings device_settings, const VulkanSettings &settings) noexcept;
+        explicit Device(const DeviceInfo &info, DeviceSettings device_settings, const VulkanSettings &settings) noexcept;
         ~Device() noexcept;
 
         virtual void IInit() noexcept override;
@@ -97,7 +86,7 @@ namespace DnmRHI::Vk {
         virtual void ISubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept override;
         virtual void IWaitSemaphore(const WaitSemaphoreDesc &desc) noexcept override;
         virtual void IPresent(const PresentDesc &desc) noexcept override;
-        [[nodiscard]] virtual slang::ISession *CreateCompilerSession(slang::IGlobalSession *global_session) noexcept override { return {}; }
+        [[nodiscard]] virtual slang::ISession *CreateCompilerSession(slang::IGlobalSession *global_session) noexcept override;
 
         [[nodiscard]] auto GetInstance() const noexcept { return m_instance; }
         [[nodiscard]] auto GetPhysicalDevice() const noexcept { return m_physical_device; }
@@ -140,13 +129,14 @@ namespace DnmRHI::Vk {
             return m_vk_device_properties.sample_map[static_cast<u8>(sample)];
         }
     private:
-        b8 GetInstanceFeatures(std::vector<const char *> &supported_ext, std::vector<const char *> &layers, InstanceFeatures &instance_features);
-        b8 CheckAndGetDeviceFeatures(vk::PhysicalDevice device, std::vector<const char *> &supported_ext, DeviceFeatures &m_device_features, void *&feature_chain) { return false; }
-
-        void CreateInstance() noexcept;
-        void CreateDevice() noexcept;
+        void CreateInstance(const VpFunctions &vp_functions) noexcept;
+        void CreateDevice(const VpFunctions &vp_functions) noexcept;
         void CreateVmaAllocator() noexcept;
         void CreateDescriptorManager() noexcept;
+
+        // i back maunel check
+        static b8 CheckGPUSupportAndGetFeatures(vk::PhysicalDevice device, DeviceInfo &device_info, 
+                b8 just_check, Vk::DeviceFeatures vk_features, std::vector<const char *> &extensions, void *&features);
 
         vk::detail::DynamicLoader m_dl;
         vk::Instance m_instance;
@@ -166,8 +156,9 @@ namespace DnmRHI::Vk {
         DescriptorManager *m_descriptor_manager;
 
         VulkanSettings m_vk_settings;
-        InstanceFeatures m_vk_instance_features;
         DeviceFeatures m_vk_device_features;
         DeviceProperties m_vk_device_properties;
+
+        friend DnmRHI::Device *CreateVulkanDevice(const DeviceInfo &device_info, DeviceSettings device_settings, const VulkanSettings &vk_settings);
     };
 }

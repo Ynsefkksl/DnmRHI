@@ -81,7 +81,7 @@ namespace DnmRHI {
     };
 
     enum class GraphicsApi : u8 {
-        eVk,
+        eVulkan,
         eD3D12
     };
 

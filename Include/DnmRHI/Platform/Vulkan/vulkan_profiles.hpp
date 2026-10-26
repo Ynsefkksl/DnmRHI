@@ -42,6 +42,7 @@
     defined(VK_EXT_calibrated_timestamps) && \
     defined(VK_EXT_conditional_rendering) && \
     defined(VK_EXT_conservative_rasterization) && \
+    defined(VK_EXT_debug_utils) && \
     defined(VK_EXT_descriptor_buffer) && \
     defined(VK_EXT_descriptor_heap) && \
     defined(VK_EXT_memory_budget) && \
@@ -62,13 +63,14 @@
     defined(VK_KHR_ray_tracing_maintenance1) && \
     defined(VK_KHR_ray_tracing_pipeline) && \
     defined(VK_KHR_shader_untyped_pointers) && \
+    defined(VK_KHR_surface) && \
     defined(VK_KHR_surface_maintenance1) && \
     defined(VK_KHR_swapchain) && \
     defined(VK_KHR_swapchain_maintenance1) && \
     defined(VK_KHR_unified_image_layouts)
 #define VP_DNMRHI_VulkanRequirements 1
 #define VP_DNMRHI_VULKANREQUIREMENTS_NAME "VP_DNMRHI_VulkanRequirements"
-#define VP_DNMRHI_VULKANREQUIREMENTS_SPEC_VERSION 1
+#define VP_DNMRHI_VULKANREQUIREMENTS_SPEC_VERSION 0
 #define VP_DNMRHI_VULKANREQUIREMENTS_MIN_API_VERSION VK_MAKE_VERSION(1, 4, 0)
 #endif
 
@@ -982,35 +984,37 @@ static const VkStructureType propertyStructTypes[] = {
 };
 
 static const VkExtensionProperties instanceExtensions[] = {
-    VkExtensionProperties{ VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME, 1 },
+    VkExtensionProperties{ VK_EXT_DEBUG_UTILS_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_SURFACE_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME, 0 },
 };
 
 static const VkExtensionProperties deviceExtensions[] = {
-    VkExtensionProperties{ VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_MEMORY_BUDGET_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_MESH_SHADER_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_MAINTENANCE_9_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_RAY_QUERY_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_SWAPCHAIN_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_UNIFIED_IMAGE_LAYOUTS_EXTENSION_NAME, 1 },
+    VkExtensionProperties{ VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_MEMORY_BUDGET_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_MESH_SHADER_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_MAINTENANCE_9_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_RAY_QUERY_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_SWAPCHAIN_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_UNIFIED_IMAGE_LAYOUTS_EXTENSION_NAME, 0 },
 };
 
 static const VpFeatureDesc featureDesc = {
@@ -1420,21 +1424,25 @@ static const VpStructChainerDesc chainerDesc = {
 namespace blocks {
 namespace Baseline {
 
+static const VkExtensionProperties instanceExtensions[] = {
+    VkExtensionProperties{ VK_KHR_SURFACE_EXTENSION_NAME, 0 },
+};
+
 static const VkExtensionProperties deviceExtensions[] = {
-    VkExtensionProperties{ VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_MEMORY_BUDGET_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_MESH_SHADER_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_RAY_QUERY_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_SWAPCHAIN_EXTENSION_NAME, 1 },
+    VkExtensionProperties{ VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_MEMORY_BUDGET_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_MESH_SHADER_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_RAY_QUERY_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_SWAPCHAIN_EXTENSION_NAME, 0 },
 };
 
 static const VpFeatureDesc featureDesc = {
@@ -1791,8 +1799,8 @@ static const VpStructChainerDesc chainerDesc = {
 namespace DescriptorHeap {
 
 static const VkExtensionProperties deviceExtensions[] = {
-    VkExtensionProperties{ VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME, 1 },
+    VkExtensionProperties{ VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME, 0 },
 };
 
 static const VpFeatureDesc featureDesc = {
@@ -1860,8 +1868,8 @@ static const VpStructChainerDesc chainerDesc = {
 namespace PageableDeviceLocalMemory {
 
 static const VkExtensionProperties deviceExtensions[] = {
-    VkExtensionProperties{ VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME, 1 },
+    VkExtensionProperties{ VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME, 0 },
 };
 
 static const VpFeatureDesc featureDesc = {
@@ -1929,7 +1937,7 @@ static const VpStructChainerDesc chainerDesc = {
 namespace UnifiedImageLayouts {
 
 static const VkExtensionProperties deviceExtensions[] = {
-    VkExtensionProperties{ VK_KHR_UNIFIED_IMAGE_LAYOUTS_EXTENSION_NAME, 1 },
+    VkExtensionProperties{ VK_KHR_UNIFIED_IMAGE_LAYOUTS_EXTENSION_NAME, 0 },
 };
 
 static const VpFeatureDesc featureDesc = {
@@ -1985,10 +1993,10 @@ static const VpStructChainerDesc chainerDesc = {
     },
 };
 } // namespace UnifiedImageLayouts
-namespace ShaderStecilExport {
+namespace ShaderStencilExport {
 
 static const VkExtensionProperties deviceExtensions[] = {
-    VkExtensionProperties{ VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME, 1 },
+    VkExtensionProperties{ VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME, 0 },
 };
 
 static const VpFeatureDesc featureDesc = {
@@ -2028,11 +2036,11 @@ static const VpStructChainerDesc chainerDesc = {
         pfnCb(p, pUser);
     },
 };
-} // namespace ShaderStecilExport
+} // namespace ShaderStencilExport
 namespace MeshAndTaskShaderDerivatives {
 
 static const VkExtensionProperties deviceExtensions[] = {
-    VkExtensionProperties{ VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME, 1 },
+    VkExtensionProperties{ VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME, 0 },
 };
 
 static const VpFeatureDesc featureDesc = {
@@ -2090,7 +2098,7 @@ static const VpStructChainerDesc chainerDesc = {
 namespace Maintenance9 {
 
 static const VkExtensionProperties deviceExtensions[] = {
-    VkExtensionProperties{ VK_KHR_MAINTENANCE_9_EXTENSION_NAME, 1 },
+    VkExtensionProperties{ VK_KHR_MAINTENANCE_9_EXTENSION_NAME, 0 },
 };
 
 static const VpFeatureDesc featureDesc = {
@@ -2204,12 +2212,12 @@ static const VpStructChainerDesc chainerDesc = {
 namespace SwapchainMaintenance1 {
 
 static const VkExtensionProperties instanceExtensions[] = {
-    VkExtensionProperties{ VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME, 1 },
-    VkExtensionProperties{ VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME, 1 },
+    VkExtensionProperties{ VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME, 0 },
 };
 
 static const VkExtensionProperties deviceExtensions[] = {
-    VkExtensionProperties{ VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME, 1 },
+    VkExtensionProperties{ VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME, 0 },
 };
 
 static const VpFeatureDesc featureDesc = {
@@ -2268,7 +2276,7 @@ static const VpStructChainerDesc chainerDesc = {
 namespace RayTracingInvocationReorder {
 
 static const VkExtensionProperties deviceExtensions[] = {
-    VkExtensionProperties{ VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME, 1 },
+    VkExtensionProperties{ VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME, 0 },
 };
 
 static const VpFeatureDesc featureDesc = {
@@ -2327,7 +2335,7 @@ static const VpStructChainerDesc chainerDesc = {
 namespace OpacityMicromap {
 
 static const VkExtensionProperties deviceExtensions[] = {
-    VkExtensionProperties{ VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME, 1 },
+    VkExtensionProperties{ VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME, 0 },
 };
 
 static const VpFeatureDesc featureDesc = {
@@ -2383,6 +2391,50 @@ static const VpStructChainerDesc chainerDesc = {
     },
 };
 } // namespace OpacityMicromap
+namespace DebugUtils {
+
+static const VkExtensionProperties instanceExtensions[] = {
+    VkExtensionProperties{ VK_EXT_DEBUG_UTILS_EXTENSION_NAME, 0 },
+};
+
+static const VpFeatureDesc featureDesc = {
+    [](VkBaseOutStructure* p) { (void)p;
+    },
+    [](VkBaseOutStructure* p) -> bool { (void)p;
+        bool ret = true;
+        return ret;
+    }
+};
+
+static const VpPropertyDesc propertyDesc = {
+    [](VkBaseOutStructure* p) { (void)p;
+    },
+    [](VkBaseOutStructure* p) -> bool { (void)p;
+        bool ret = true;
+        return ret;
+    }
+};
+
+static const VpStructChainerDesc chainerDesc = {
+    [](VkBaseOutStructure* p, void* pUser, PFN_vpStructChainerCb pfnCb) {
+        p->pNext = static_cast<VkBaseOutStructure*>(static_cast<void*>(nullptr));
+        pfnCb(p, pUser);
+    },
+    [](VkBaseOutStructure* p, void* pUser, PFN_vpStructChainerCb pfnCb) {
+        VkPhysicalDeviceVulkan11Properties physicalDeviceVulkan11Properties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES, nullptr };
+        VkPhysicalDeviceVulkan12Properties physicalDeviceVulkan12Properties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES, &physicalDeviceVulkan11Properties };
+        VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR physicalDeviceComputeShaderDerivativesPropertiesKHR{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_PROPERTIES_KHR, &physicalDeviceVulkan12Properties };
+        p->pNext = static_cast<VkBaseOutStructure*>(static_cast<void*>(&physicalDeviceComputeShaderDerivativesPropertiesKHR));
+        pfnCb(p, pUser);
+    },
+    [](uint32_t count, VkBaseOutStructure* p, void* pUser, PFN_vpStructArrayChainerCb pfnCb) {
+        pfnCb(count, p, pUser);
+    },
+    [](VkBaseOutStructure* p, void* pUser, PFN_vpStructChainerCb pfnCb) {
+        pfnCb(p, pUser);
+    },
+};
+} // namespace DebugUtils
 } // namespace blocks
 } // namespace VP_DNMRHI_VULKANREQUIREMENTS
 #endif // VP_DNMRHI_VulkanRequirements
@@ -2413,7 +2465,7 @@ namespace VP_DNMRHI_VULKANREQUIREMENTS {
             static const VpVariantDesc variants[] = {
                 {
                     "Baseline",
-                    0, nullptr,
+                    static_cast<uint32_t>(std::size(blocks::Baseline::instanceExtensions)), blocks::Baseline::instanceExtensions,
                     static_cast<uint32_t>(std::size(blocks::Baseline::deviceExtensions)), blocks::Baseline::deviceExtensions,
                     static_cast<uint32_t>(std::size(featureStructTypes)), featureStructTypes,
                     blocks::Baseline::featureDesc,
@@ -2493,26 +2545,26 @@ namespace VP_DNMRHI_VULKANREQUIREMENTS {
             static const uint32_t variantCount = static_cast<uint32_t>(std::size(variants));
         } // namespace UnifiedImageLayouts
 
-        namespace ShaderStecilExport {
+        namespace ShaderStencilExport {
             static const VpVariantDesc variants[] = {
                 {
-                    "ShaderStecilExport",
+                    "ShaderStencilExport",
                     0, nullptr,
-                    static_cast<uint32_t>(std::size(blocks::ShaderStecilExport::deviceExtensions)), blocks::ShaderStecilExport::deviceExtensions,
+                    static_cast<uint32_t>(std::size(blocks::ShaderStencilExport::deviceExtensions)), blocks::ShaderStencilExport::deviceExtensions,
                     0, nullptr,
-                    blocks::ShaderStecilExport::featureDesc,
+                    blocks::ShaderStencilExport::featureDesc,
                     0, nullptr,
-                    blocks::ShaderStecilExport::propertyDesc,
-                    0, nullptr,
-                    0, nullptr,
+                    blocks::ShaderStencilExport::propertyDesc,
                     0, nullptr,
                     0, nullptr,
-                    blocks::ShaderStecilExport::chainerDesc,
+                    0, nullptr,
+                    0, nullptr,
+                    blocks::ShaderStencilExport::chainerDesc,
                     0, nullptr,
                 },
             };
             static const uint32_t variantCount = static_cast<uint32_t>(std::size(variants));
-        } // namespace ShaderStecilExport
+        } // namespace ShaderStencilExport
 
         namespace MeshAndTaskShaderDerivatives {
             static const VpVariantDesc variants[] = {
@@ -2639,6 +2691,27 @@ namespace VP_DNMRHI_VULKANREQUIREMENTS {
             };
             static const uint32_t variantCount = static_cast<uint32_t>(std::size(variants));
         } // namespace OpacityMicromap
+
+        namespace DebugUtils {
+            static const VpVariantDesc variants[] = {
+                {
+                    "DebugUtils",
+                    static_cast<uint32_t>(std::size(blocks::DebugUtils::instanceExtensions)), blocks::DebugUtils::instanceExtensions,
+                    0, nullptr,
+                    0, nullptr,
+                    blocks::DebugUtils::featureDesc,
+                    0, nullptr,
+                    blocks::DebugUtils::propertyDesc,
+                    0, nullptr,
+                    0, nullptr,
+                    0, nullptr,
+                    0, nullptr,
+                    blocks::DebugUtils::chainerDesc,
+                    0, nullptr,
+                },
+            };
+            static const uint32_t variantCount = static_cast<uint32_t>(std::size(variants));
+        } // namespace DebugUtils
     } // namespace blocks
 
     static const VpCapabilitiesDesc capabilities[] = {
@@ -2646,13 +2719,14 @@ namespace VP_DNMRHI_VULKANREQUIREMENTS {
         { blocks::DescriptorHeap::variantCount, blocks::DescriptorHeap::variants },
         { blocks::PageableDeviceLocalMemory::variantCount, blocks::PageableDeviceLocalMemory::variants },
         { blocks::UnifiedImageLayouts::variantCount, blocks::UnifiedImageLayouts::variants },
-        { blocks::ShaderStecilExport::variantCount, blocks::ShaderStecilExport::variants },
+        { blocks::ShaderStencilExport::variantCount, blocks::ShaderStencilExport::variants },
         { blocks::MeshAndTaskShaderDerivatives::variantCount, blocks::MeshAndTaskShaderDerivatives::variants },
         { blocks::Maintenance9::variantCount, blocks::Maintenance9::variants },
         { blocks::InputOutput16::variantCount, blocks::InputOutput16::variants },
         { blocks::SwapchainMaintenance1::variantCount, blocks::SwapchainMaintenance1::variants },
         { blocks::RayTracingInvocationReorder::variantCount, blocks::RayTracingInvocationReorder::variants },
         { blocks::OpacityMicromap::variantCount, blocks::OpacityMicromap::variants },
+        { blocks::DebugUtils::variantCount, blocks::DebugUtils::variants },
     };
     static const uint32_t capabilityCount = static_cast<uint32_t>(std::size(capabilities));
 } // namespace VP_DNMRHI_VULKANREQUIREMENTS

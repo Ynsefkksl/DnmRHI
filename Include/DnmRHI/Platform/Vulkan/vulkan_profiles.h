@@ -34,6 +34,7 @@
     defined(VK_EXT_calibrated_timestamps) && \
     defined(VK_EXT_conditional_rendering) && \
     defined(VK_EXT_conservative_rasterization) && \
+    defined(VK_EXT_debug_utils) && \
     defined(VK_EXT_descriptor_buffer) && \
     defined(VK_EXT_descriptor_heap) && \
     defined(VK_EXT_memory_budget) && \
@@ -54,13 +55,14 @@
     defined(VK_KHR_ray_tracing_maintenance1) && \
     defined(VK_KHR_ray_tracing_pipeline) && \
     defined(VK_KHR_shader_untyped_pointers) && \
+    defined(VK_KHR_surface) && \
     defined(VK_KHR_surface_maintenance1) && \
     defined(VK_KHR_swapchain) && \
     defined(VK_KHR_swapchain_maintenance1) && \
     defined(VK_KHR_unified_image_layouts)
 #define VP_DNMRHI_VulkanRequirements 1
 #define VP_DNMRHI_VULKANREQUIREMENTS_NAME "VP_DNMRHI_VulkanRequirements"
-#define VP_DNMRHI_VULKANREQUIREMENTS_SPEC_VERSION 1
+#define VP_DNMRHI_VULKANREQUIREMENTS_SPEC_VERSION 0
 #define VP_DNMRHI_VULKANREQUIREMENTS_MIN_API_VERSION VK_MAKE_VERSION(1, 4, 0)
 #endif
 

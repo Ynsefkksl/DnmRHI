@@ -3,21 +3,21 @@
     "capabilities": {
         "Baseline": {
             "extensions": {
-                "VK_EXT_conditional_rendering": 1,
-                "VK_KHR_swapchain": 1,
-                "VK_KHR_surface": 1,
-                "VK_EXT_memory_budget": 1,
-                "VK_EXT_calibrated_timestamps": 1,
-                "VK_EXT_conservative_rasterization": 1,
-                "VK_EXT_descriptor_buffer": 1,
-                "VK_KHR_compute_shader_derivatives": 1,
-                "VK_EXT_mesh_shader": 1,
-                "VK_KHR_ray_query": 1,
-                "VK_KHR_fragment_shading_rate": 1,
-                "VK_KHR_ray_tracing_maintenance1": 1,
-                "VK_KHR_ray_tracing_pipeline": 1,
-                "VK_KHR_acceleration_structure": 1,
-                "VK_KHR_deferred_host_operations": 1
+                "VK_EXT_conditional_rendering": 0,
+                "VK_KHR_swapchain": 0,
+                "VK_KHR_surface": 0,
+                "VK_EXT_memory_budget": 0,
+                "VK_EXT_calibrated_timestamps": 0,
+                "VK_EXT_conservative_rasterization": 0,
+                "VK_EXT_descriptor_buffer": 0,
+                "VK_KHR_compute_shader_derivatives": 0,
+                "VK_EXT_mesh_shader": 0,
+                "VK_KHR_ray_query": 0,
+                "VK_KHR_fragment_shading_rate": 0,
+                "VK_KHR_ray_tracing_maintenance1": 0,
+                "VK_KHR_ray_tracing_pipeline": 0,
+                "VK_KHR_acceleration_structure": 0,
+                "VK_KHR_deferred_host_operations": 0
             },
             "features": {
                 "VkPhysicalDeviceFeatures" : {
@@ -167,8 +167,8 @@
         },
         "DescriptorHeap": {
             "extensions": {
-                "VK_EXT_descriptor_heap": 1,
-                "VK_KHR_shader_untyped_pointers": 1
+                "VK_EXT_descriptor_heap": 0,
+                "VK_KHR_shader_untyped_pointers": 0
             },
             "features": {
                 "VkPhysicalDeviceDescriptorHeapFeaturesEXT": {
@@ -181,8 +181,8 @@
         },
         "PageableDeviceLocalMemory": {
             "extensions": {
-                "VK_EXT_pageable_device_local_memory": 1,
-                "VK_EXT_memory_priority": 1
+                "VK_EXT_pageable_device_local_memory": 0,
+                "VK_EXT_memory_priority": 0
             },
             "features": {
                 "VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT": {
@@ -195,7 +195,7 @@
         },
         "UnifiedImageLayouts": {
             "extensions": {
-                "VK_KHR_unified_image_layouts": 1
+                "VK_KHR_unified_image_layouts": 0
             },
             "features": {
                 "VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR": {
@@ -203,14 +203,14 @@
                 }
             }
         },
-        "ShaderStecilExport": {
+        "ShaderStencilExport": {
             "extensions": {
-                "VK_EXT_shader_stencil_export": 1
+                "VK_EXT_shader_stencil_export": 0
             }
         },
         "MeshAndTaskShaderDerivatives": {
             "extensions": {
-                "VK_KHR_compute_shader_derivatives": 1
+                "VK_KHR_compute_shader_derivatives": 0
             },
             "properties": {
                 "VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR": {
@@ -220,7 +220,7 @@
         },
         "Maintenance9": {
             "extensions": {
-                "VK_KHR_maintenance9": 1
+                "VK_KHR_maintenance9": 0
             },
             "features": {
                 "VkPhysicalDeviceMaintenance9FeaturesKHR": {
@@ -237,9 +237,9 @@
         },
         "SwapchainMaintenance1": {
             "extensions": {
-                "VK_KHR_swapchain_maintenance1": 1,
-                "VK_KHR_surface_maintenance1": 1,
-                "VK_KHR_get_surface_capabilities2": 1
+                "VK_KHR_swapchain_maintenance1": 0,
+                "VK_KHR_surface_maintenance1": 0,
+                "VK_KHR_get_surface_capabilities2": 0
             },
             "features": {
                 "VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR": {
@@ -249,7 +249,7 @@
         },
         "RayTracingInvocationReorder": {
             "extensions": {
-                "VK_EXT_ray_tracing_invocation_reorder": 1
+                "VK_EXT_ray_tracing_invocation_reorder": 0
             },
             "features": {
                 "VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT": {
@@ -259,18 +259,23 @@
         },
         "OpacityMicromap": {
             "extensions": {
-                "VK_EXT_opacity_micromap": 1
+                "VK_EXT_opacity_micromap": 0
             },
             "features": {
                 "VkPhysicalDeviceOpacityMicromapFeaturesEXT": {
                     "micromap": true
                 }
             }
+        },
+        "DebugUtils": {
+            "extensions": {
+                "VK_EXT_debug_utils": 0
+            }
         }
     },
     "profiles": {
         "VP_DNMRHI_VulkanRequirements": {
-            "version": 1,
+            "version": 0,
             "api-version": "1.4.000",
             "label": "DnmRHI Profile",
             "description": "For DnmRHI",
@@ -279,13 +284,14 @@
                 "DescriptorHeap",
                 "PageableDeviceLocalMemory",
                 "UnifiedImageLayouts",
-                "ShaderStecilExport",
+                "ShaderStencilExport",
                 "MeshAndTaskShaderDerivatives",
                 "Maintenance9",
                 "InputOutput16",
                 "SwapchainMaintenance1",
                 "RayTracingInvocationReorder",
-                "OpacityMicromap"
+                "OpacityMicromap",
+                "DebugUtils"
             ]
         }
     },
@@ -297,7 +303,7 @@
     },
     "history": [
         {
-            "revision": 1,
+            "revision": 0,
             "date": "2026-10-24",
             "author": "Dnm",
             "comment": "Initial revision"
