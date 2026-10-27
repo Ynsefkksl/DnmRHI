@@ -86,7 +86,8 @@ namespace DnmRHI {
             vk::PhysicalDeviceMaintenance9FeaturesKHR,
             vk::PhysicalDeviceSwapchainMaintenance1FeaturesKHR,
             vk::PhysicalDeviceRayTracingInvocationReorderFeaturesEXT,
-            vk::PhysicalDeviceOpacityMicromapFeaturesEXT
+            vk::PhysicalDeviceOpacityMicromapFeaturesEXT,
+            vk::PhysicalDeviceMutableDescriptorTypeFeaturesEXT
         > chain;
         auto& f2 = chain.get<vk::PhysicalDeviceFeatures2>();
 
@@ -387,13 +388,13 @@ namespace DnmRHI::Vk {
         //     if (callback_data->messageIdNumber == i) return vk::True;
 
         if (message_severity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) {
-            // std::println("Vulkan Error; message id {}, message: {}", callback_data->messageIdNumber, callback_data->pMessage);
+            std::println("Vulkan Error; message id {}, message: {}", callback_data->messageIdNumber, callback_data->pMessage);
         }
         else if (message_severity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) {
-            // std::println("Vulkan Warn; message id {}, message: {}", callback_data->messageIdNumber, callback_data->pMessage);
+            std::println("Vulkan Warn; message id {}, message: {}", callback_data->messageIdNumber, callback_data->pMessage);
         }
         else {
-            // std::println("Vulkan Info; message id {}, message: {}", callback_data->messageIdNumber, callback_data->pMessage);
+            std::println("Vulkan Info; message id {}, message: {}", callback_data->messageIdNumber, callback_data->pMessage);
         }
         return vk::True;
     }
@@ -721,14 +722,20 @@ namespace DnmRHI::Vk {
         return new Shader(*this, entry_point);
     }
     
-    u32 Device::IGetBindlessStorage(DnmRHI::Image &image, ImageSubresource subresource) noexcept {
-        return m_descriptor_manager->GetStorageImageBindlessIndex(reinterpret_cast<Vk::Image &>(image), subresource);
+    void Device::ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept {
+        m_descriptor_manager->SetUniformBufferBindlessIndex(index, static_cast<Vk::Buffer &>(buffer), subresource);
     }
-    u32 Device::IGetBindlessSampled(DnmRHI::Image &image, ImageSubresource subresource) noexcept {
-        return m_descriptor_manager->GetSampledImageBindlessIndex(reinterpret_cast<Vk::Image &>(image), subresource);
+
+    void Device::ISetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
+        m_descriptor_manager->SetSampledImageBindlessIndex(index, static_cast<Vk::Image &>(image), subresource);
     }
-    u32 Device::IGetBindlessSampler(const SamplerDesc &desc) noexcept {
-        return m_descriptor_manager->GetSamplerBindlessIndex(desc);
+
+    void Device::ISetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
+        m_descriptor_manager->SetStorageImageBindlessIndex(index, static_cast<Vk::Image &>(image), subresource);
+    }
+
+    void Device::ISetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept {
+        m_descriptor_manager->SetSamplerBindlessIndex(index, sampler);
     }
 
     void Device::ISubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept {

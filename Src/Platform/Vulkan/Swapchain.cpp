@@ -251,7 +251,7 @@ namespace DnmRHI::Vk {
             ));
         }
 
-        for (const auto i : Counter(Frames_In_Flight_Count)) {
+        for (const auto i : Counter(c_Frames_In_Flight_Count)) {
             const auto semaphore = m_image_acquire_semaphores.emplace_back(
                 GetVkDevice.GetDevice().createSemaphore({})
             );

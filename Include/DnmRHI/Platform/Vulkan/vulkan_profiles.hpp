@@ -48,6 +48,7 @@
     defined(VK_EXT_memory_budget) && \
     defined(VK_EXT_memory_priority) && \
     defined(VK_EXT_mesh_shader) && \
+    defined(VK_EXT_mutable_descriptor_type) && \
     defined(VK_EXT_opacity_micromap) && \
     defined(VK_EXT_pageable_device_local_memory) && \
     defined(VK_EXT_ray_tracing_invocation_reorder) && \
@@ -966,6 +967,7 @@ static const VkStructureType featureStructTypes[] = {
     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR,
     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR,
     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR,
+    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT,
     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_FEATURES_EXT,
     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_UNTYPED_POINTERS_FEATURES_KHR,
     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT,
@@ -999,6 +1001,7 @@ static const VkExtensionProperties deviceExtensions[] = {
     VkExtensionProperties{ VK_EXT_MEMORY_BUDGET_EXTENSION_NAME, 0 },
     VkExtensionProperties{ VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, 0 },
     VkExtensionProperties{ VK_EXT_MESH_SHADER_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME, 0 },
     VkExtensionProperties{ VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME, 0 },
     VkExtensionProperties{ VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME, 0 },
     VkExtensionProperties{ VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME, 0 },
@@ -1152,6 +1155,10 @@ static const VpFeatureDesc featureDesc = {
                     VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR* s = static_cast<VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR*>(static_cast<void*>(p));
                     s->computeDerivativeGroupLinear = VK_TRUE;
                     s->computeDerivativeGroupQuads = VK_TRUE;
+                } break;
+                case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT: {
+                    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT* s = static_cast<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT*>(static_cast<void*>(p));
+                    s->mutableDescriptorType = VK_TRUE;
                 } break;
                 case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_FEATURES_EXT: {
                     VkPhysicalDeviceDescriptorHeapFeaturesEXT* s = static_cast<VkPhysicalDeviceDescriptorHeapFeaturesEXT*>(static_cast<void*>(p));
@@ -1328,6 +1335,10 @@ static const VpFeatureDesc featureDesc = {
                     ret = ret && (s->computeDerivativeGroupLinear == VK_TRUE);
                     ret = ret && (s->computeDerivativeGroupQuads == VK_TRUE);
                 } break;
+                case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT: {
+                    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT* s = static_cast<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT*>(static_cast<void*>(p));
+                    ret = ret && (s->mutableDescriptorType == VK_TRUE);
+                } break;
                 case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_FEATURES_EXT: {
                     VkPhysicalDeviceDescriptorHeapFeaturesEXT* s = static_cast<VkPhysicalDeviceDescriptorHeapFeaturesEXT*>(static_cast<void*>(p));
                     ret = ret && (s->descriptorHeap == VK_TRUE);
@@ -1394,7 +1405,8 @@ static const VpStructChainerDesc chainerDesc = {
         VkPhysicalDeviceAccelerationStructureFeaturesKHR physicalDeviceAccelerationStructureFeaturesKHR{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR, &physicalDeviceRayTracingMaintenance1FeaturesKHR };
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR physicalDeviceRayTracingPipelineFeaturesKHR{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR, &physicalDeviceAccelerationStructureFeaturesKHR };
         VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR physicalDeviceComputeShaderDerivativesFeaturesKHR{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR, &physicalDeviceRayTracingPipelineFeaturesKHR };
-        VkPhysicalDeviceDescriptorHeapFeaturesEXT physicalDeviceDescriptorHeapFeaturesEXT{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_FEATURES_EXT, &physicalDeviceComputeShaderDerivativesFeaturesKHR };
+        VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT physicalDeviceMutableDescriptorTypeFeaturesEXT{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT, &physicalDeviceComputeShaderDerivativesFeaturesKHR };
+        VkPhysicalDeviceDescriptorHeapFeaturesEXT physicalDeviceDescriptorHeapFeaturesEXT{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_FEATURES_EXT, &physicalDeviceMutableDescriptorTypeFeaturesEXT };
         VkPhysicalDeviceShaderUntypedPointersFeaturesKHR physicalDeviceShaderUntypedPointersFeaturesKHR{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_UNTYPED_POINTERS_FEATURES_KHR, &physicalDeviceDescriptorHeapFeaturesEXT };
         VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT physicalDevicePageableDeviceLocalMemoryFeaturesEXT{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT, &physicalDeviceShaderUntypedPointersFeaturesKHR };
         VkPhysicalDeviceMemoryPriorityFeaturesEXT physicalDeviceMemoryPriorityFeaturesEXT{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT, &physicalDevicePageableDeviceLocalMemoryFeaturesEXT };
@@ -1435,6 +1447,7 @@ static const VkExtensionProperties deviceExtensions[] = {
     VkExtensionProperties{ VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME, 0 },
     VkExtensionProperties{ VK_EXT_MEMORY_BUDGET_EXTENSION_NAME, 0 },
     VkExtensionProperties{ VK_EXT_MESH_SHADER_EXTENSION_NAME, 0 },
+    VkExtensionProperties{ VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME, 0 },
     VkExtensionProperties{ VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, 0 },
     VkExtensionProperties{ VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME, 0 },
     VkExtensionProperties{ VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, 0 },
@@ -1580,6 +1593,10 @@ static const VpFeatureDesc featureDesc = {
                     s->computeDerivativeGroupLinear = VK_TRUE;
                     s->computeDerivativeGroupQuads = VK_TRUE;
                 } break;
+                case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT: {
+                    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT* s = static_cast<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT*>(static_cast<void*>(p));
+                    s->mutableDescriptorType = VK_TRUE;
+                } break;
                 default: break;
             }
     },
@@ -1718,6 +1735,10 @@ static const VpFeatureDesc featureDesc = {
                     ret = ret && (s->computeDerivativeGroupLinear == VK_TRUE);
                     ret = ret && (s->computeDerivativeGroupQuads == VK_TRUE);
                 } break;
+                case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT: {
+                    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT* s = static_cast<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT*>(static_cast<void*>(p));
+                    ret = ret && (s->mutableDescriptorType == VK_TRUE);
+                } break;
                 default: break;
             }
         return ret;
@@ -1778,7 +1799,8 @@ static const VpStructChainerDesc chainerDesc = {
         VkPhysicalDeviceAccelerationStructureFeaturesKHR physicalDeviceAccelerationStructureFeaturesKHR{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR, &physicalDeviceRayTracingMaintenance1FeaturesKHR };
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR physicalDeviceRayTracingPipelineFeaturesKHR{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR, &physicalDeviceAccelerationStructureFeaturesKHR };
         VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR physicalDeviceComputeShaderDerivativesFeaturesKHR{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR, &physicalDeviceRayTracingPipelineFeaturesKHR };
-        p->pNext = static_cast<VkBaseOutStructure*>(static_cast<void*>(&physicalDeviceComputeShaderDerivativesFeaturesKHR));
+        VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT physicalDeviceMutableDescriptorTypeFeaturesEXT{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT, &physicalDeviceComputeShaderDerivativesFeaturesKHR };
+        p->pNext = static_cast<VkBaseOutStructure*>(static_cast<void*>(&physicalDeviceMutableDescriptorTypeFeaturesEXT));
         pfnCb(p, pUser);
     },
     [](VkBaseOutStructure* p, void* pUser, PFN_vpStructChainerCb pfnCb) {

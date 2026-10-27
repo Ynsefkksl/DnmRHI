@@ -40,6 +40,7 @@
     defined(VK_EXT_memory_budget) && \
     defined(VK_EXT_memory_priority) && \
     defined(VK_EXT_mesh_shader) && \
+    defined(VK_EXT_mutable_descriptor_type) && \
     defined(VK_EXT_opacity_micromap) && \
     defined(VK_EXT_pageable_device_local_memory) && \
     defined(VK_EXT_ray_tracing_invocation_reorder) && \

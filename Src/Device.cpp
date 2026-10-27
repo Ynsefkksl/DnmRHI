@@ -75,19 +75,28 @@ namespace DnmRHI {
         return ICreateShader(m_shader_compiler->GetEntryPointBinary(desc.file, desc.entry_point));
     }
 
-    u32 Device::GetBindlessStorage(Image &image, ImageSubresource subresource) noexcept {
-        // TODO: check if parameters is valid
-        return IGetBindlessStorage(image, subresource);
-    }
-
-    u32 Device::GetBindlessSampled(Image &image, ImageSubresource subresource) noexcept {
-        // TODO: check if parameters is valid
-        return IGetBindlessSampled(image, subresource);
-    }
-
-    u32 Device::GetBindlessSampler(const SamplerDesc &desc) noexcept {
+    void Device::SetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept {
         // TODO: check if desc is valid
-        return IGetBindlessSampler(desc);
+
+        ISetUniformBufferBindlessIndex(index, buffer, subresource);
+    }
+
+    void Device::SetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
+        // TODO: check if desc is valid
+
+        ISetSampledImageBindlessIndex(index, image, subresource);
+    }
+
+    void Device::SetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
+        // TODO: check if desc is valid
+
+        ISetStorageImageBindlessIndex(index, image, subresource);
+    }
+
+    void Device::SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept {
+        // TODO: check if desc is valid
+
+        ISetSamplerBindlessIndex(index, sampler);
     }
 
     void Device::SubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept {

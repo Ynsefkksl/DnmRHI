@@ -70,6 +70,10 @@ namespace DnmRHI {
     };
 
     struct DeviceSettings {
+        // TODO: define up limit
+        u32 resource_count{200'000};
+        u32 sampler_count{2'000};
+
         b8 shader_debug: 1{};
         b8 desc_validation: 1{};
         b8 validation_layer: 1{};
@@ -80,6 +84,9 @@ namespace DnmRHI {
         b8 shader_stencil_export: 1{}; 
         b8 ray_tracing_invocation_reorder: 1{};
         b8 opacity_micromap: 1{};
+
+        constexpr auto &SetResourceCount(u32 resource_count) noexcept { this->resource_count = resource_count; return *this; }
+        constexpr auto &SetSamplerCount(u32 sampler_count) noexcept { this->sampler_count = sampler_count; return *this; }
 
         constexpr auto &SetShaderDebug(b8 shader_debug) noexcept { this->shader_debug = shader_debug; return *this; }
         constexpr auto &SetDescValidation(b8 desc_validation) noexcept { this->desc_validation = desc_validation; return *this; }
@@ -114,9 +121,10 @@ namespace DnmRHI {
 
         void Init() noexcept;
 
-        [[nodiscard]] u32 GetBindlessStorage(DnmRHI::Image &image, ImageSubresource subresource) noexcept;
-        [[nodiscard]] u32 GetBindlessSampled(DnmRHI::Image &image, ImageSubresource subresource) noexcept;
-        [[nodiscard]] u32 GetBindlessSampler(const SamplerDesc &desc) noexcept;
+        void SetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept;
+        void SetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept;
+        void SetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept;
+        void SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept;
 
         [[nodiscard]] Buffer *CreateBuffer(const BufferDesc &desc) noexcept;
         [[nodiscard]] Image *CreateImage(const ImageDesc &desc) noexcept;
@@ -155,9 +163,10 @@ namespace DnmRHI {
         [[nodiscard]] virtual DnmRHI::Swapchain *ICreateSwapchain(const SwapchainDesc &desc) noexcept = 0;
         [[nodiscard]] virtual DnmRHI::Shader *ICreateShader(const ShaderEntryPoint &entry_point) noexcept = 0;
 
-        [[nodiscard]] virtual u32 IGetBindlessStorage(DnmRHI::Image &image, ImageSubresource subresource) noexcept = 0;
-        [[nodiscard]] virtual u32 IGetBindlessSampled(DnmRHI::Image &image, ImageSubresource subresource) noexcept = 0;
-        [[nodiscard]] virtual u32 IGetBindlessSampler(const SamplerDesc &desc) noexcept = 0;
+        virtual void ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept = 0;
+        virtual void ISetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept = 0;
+        virtual void ISetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept = 0;
+        virtual void ISetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept = 0;
 
         virtual void ISubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept = 0;
         virtual void IWaitSemaphore(const WaitSemaphoreDesc &desc) noexcept = 0;

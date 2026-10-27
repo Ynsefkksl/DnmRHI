@@ -5,12 +5,9 @@
 #include <type_traits>
 
 namespace DnmRHI {
-    constexpr auto Frames_In_Flight_Count = 3u;
-    constexpr auto Uniform_Buffer_Count = 15u; 
-    constexpr auto Sampled_Image_Count = 200'000u; 
-    constexpr auto Storage_Image_Count = 20'000u; 
-    constexpr auto Sampler_Count = 2'000u;
-    constexpr auto Push_Constant_Size = 256u;
+    constexpr auto c_Frames_In_Flight_Count = 3u;
+
+    constexpr auto c_Push_Constant_Size = 256u;
 
 	template<typename T>
 	using PureType = std::remove_cvref_t<std::remove_pointer_t<T>>;

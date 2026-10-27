@@ -17,7 +17,8 @@
                 "VK_KHR_ray_tracing_maintenance1": 0,
                 "VK_KHR_ray_tracing_pipeline": 0,
                 "VK_KHR_acceleration_structure": 0,
-                "VK_KHR_deferred_host_operations": 0
+                "VK_KHR_deferred_host_operations": 0,
+                "VK_EXT_mutable_descriptor_type": 0
             },
             "features": {
                 "VkPhysicalDeviceFeatures" : {
@@ -138,6 +139,9 @@
                 "VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR" : {
                     "computeDerivativeGroupLinear" : true,
                     "computeDerivativeGroupQuads" : true
+                },
+                "VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT": {
+                    "mutableDescriptorType": true
                 }
             },
             "properties": {

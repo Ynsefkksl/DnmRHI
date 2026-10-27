@@ -24,7 +24,7 @@ namespace DnmRHI::Vk {
         [[nodiscard]] auto GetCurrentFrameIndex() const noexcept { return m_frame_index; }
         [[nodiscard]] auto GetFrameIndex() noexcept { 
             const auto frame_index = m_frame_index; ;
-            return m_frame_index = (frame_index + 1) % Frames_In_Flight_Count, frame_index; }
+            return m_frame_index = (frame_index + 1) % c_Frames_In_Flight_Count, frame_index; }
         [[nodiscard]] auto GetImageAcquireSemaphores() const noexcept { return std::span(m_image_acquire_semaphores); }
         [[nodiscard]] auto GetImageAvailableSemaphore() const noexcept { return std::span(m_image_available_semaphores); }
     private:

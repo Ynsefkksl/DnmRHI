@@ -79,9 +79,10 @@ namespace DnmRHI::Vk {
         [[nodiscard]] virtual DnmRHI::Swapchain *ICreateSwapchain(const SwapchainDesc &desc) noexcept override;
         [[nodiscard]] virtual DnmRHI::Shader *ICreateShader(const ShaderEntryPoint &entry_point) noexcept override;
 
-        [[nodiscard]] virtual u32 IGetBindlessStorage(DnmRHI::Image &image, ImageSubresource subresource) noexcept override;
-        [[nodiscard]] virtual u32 IGetBindlessSampled(DnmRHI::Image &image, ImageSubresource subresource) noexcept override;
-        [[nodiscard]] virtual u32 IGetBindlessSampler(const SamplerDesc &desc) noexcept override;
+        virtual void ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept override;
+        virtual void ISetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept override;
+        virtual void ISetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept override;
+        virtual void ISetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept override;
 
         virtual void ISubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept override;
         virtual void IWaitSemaphore(const WaitSemaphoreDesc &desc) noexcept override;
