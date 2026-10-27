@@ -651,27 +651,6 @@ namespace DnmRHI::Vk {
 
         m_device = CreateDeviceManual(vp_functions, m_instance, m_physical_device, queues);
 
-        // VkBool32 supported{};
-        // u32 device_block_count{};
-        // vpGetPhysicalDeviceProfileVariantsSupport(vp_functions, m_instance, m_physical_device, &VpProfile, &supported, &device_block_count, nullptr);
-        // std::vector<VpBlockProperties> device_block_properties(device_block_count);
-        // vpGetPhysicalDeviceProfileVariantsSupport(vp_functions, m_instance, m_physical_device, &VpProfile, &supported, &device_block_count, device_block_properties.data());
-
-        // const auto supported_device_blocks = GetSupportedBlocks(device_block_properties, supported);
-
-        // const auto device_create_info
-        //     = vk::DeviceCreateInfo{}
-        //         .setQueueCreateInfos(queues)
-        //         ;
-
-        // VpDeviceCreateInfo vp_create_info{};
-        // vp_create_info.pCreateInfo = reinterpret_cast<const VkDeviceCreateInfo *>(&device_create_info);
-        // vp_create_info.enabledProfileBlockCount = supported_device_blocks.size();
-        // vp_create_info.pEnabledProfileBlocks = supported_device_blocks.data();
-
-        // auto result = vpCreateDevice(vp_functions, m_physical_device, &vp_create_info, nullptr, reinterpret_cast<VkDevice *>(&m_device));
-        // assert(result == VK_SUCCESS);
-
         m_general_queue = m_device.getQueue(m_general_queue_family_index, 0);
         m_compute_queue = compute_queue_create_info.queueCount ? m_device.getQueue(m_compute_queue_family_index, 0) : m_general_queue;
         m_copy_queue = copy_queue_create_info.queueCount ? m_device.getQueue(m_copy_queue_family_index, 0) : m_compute_queue;

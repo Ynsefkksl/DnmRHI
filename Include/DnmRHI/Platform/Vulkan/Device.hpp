@@ -134,10 +134,6 @@ namespace DnmRHI::Vk {
         void CreateVmaAllocator() noexcept;
         void CreateDescriptorManager() noexcept;
 
-        // i back maunel check
-        static b8 CheckGPUSupportAndGetFeatures(vk::PhysicalDevice device, DeviceInfo &device_info, 
-                b8 just_check, Vk::DeviceFeatures vk_features, std::vector<const char *> &extensions, void *&features);
-
         vk::detail::DynamicLoader m_dl;
         vk::Instance m_instance;
         vk::DebugUtilsMessengerEXT m_debug_messenger;
