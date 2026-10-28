@@ -16,6 +16,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 #define ADD_P_NEXT(struct_name) do {struct_name.pNext = p_next; \
 			                    p_next = &struct_name;} while(0)
+
 #define FEATURE_MUST_BE_SUPPORTED(feature) if (b8(feature) != true) { is_suitable = false; /* Warn("GPU is unsupported, must be support " #feature); */ }
 #define PROPERTY_MUST_BE_GTE(property, value) if (property < value) { is_suitable = false; /* Warn("GPU is unsupported, " #property " greater than " #value ", your value: {}", value); */ }
 #define PROPERTY_MUST_BE_SUPPORTED(property) if (b8(property) != true) { is_suitable = false; /* Warn("GPU is unsupported, must be support " #property " property"); */ }
@@ -712,6 +713,42 @@ namespace DnmRHI::Vk {
         SET_DEBUG_NAME_VK_OBJECT(GetDevice(), m_general_queue, "general queue");
         SET_DEBUG_NAME_VK_OBJECT(GetDevice(), m_compute_queue, "compute queue");
         SET_DEBUG_NAME_VK_OBJECT(GetDevice(), m_copy_queue, "copy queue");
+
+        {
+            void *p_next{};
+            vk::PhysicalDeviceDescriptorHeapPropertiesEXT descriptor_heap_properties{};
+            if (m_vk_device_features.descriptor_heap)
+                ADD_P_NEXT(descriptor_heap_properties);
+
+            vk::PhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties{};
+            ADD_P_NEXT(descriptor_buffer_properties);
+        
+            vk::PhysicalDeviceProperties2 properties_chain{};
+            ADD_P_NEXT(properties_chain);
+
+            auto &properties10 = properties_chain.properties;
+            m_physical_device.getProperties2(&properties_chain);
+
+            m_vk_device_properties.resource_descriptor_size = std::max(
+                {descriptor_buffer_properties.storageImageDescriptorSize, 
+                    descriptor_buffer_properties.sampledImageDescriptorSize, 
+                    descriptor_buffer_properties.uniformBufferDescriptorSize});
+            m_vk_device_properties.sampler_descriptor_size = descriptor_buffer_properties.samplerDescriptorSize;
+
+            const auto align = [] (u32 val, u32 align) {
+                return (val + align - 1) & ~(align - 1);
+            };
+
+            if (m_vk_device_features.descriptor_heap) {
+                m_vk_device_properties.resource_descriptor_size_for_heap
+                    = align(std::max(descriptor_heap_properties.bufferDescriptorSize, descriptor_heap_properties.imageDescriptorSize), std::max(descriptor_heap_properties.bufferDescriptorAlignment, descriptor_heap_properties.imageDescriptorAlignment));
+                m_vk_device_properties.sampler_descriptor_size_for_heap = descriptor_heap_properties.samplerDescriptorSize;
+                m_vk_device_properties.resource_heap_min_reserve = descriptor_heap_properties.minResourceHeapReservedRange;
+                m_vk_device_properties.sampler_heap_min_reserve = descriptor_heap_properties.minSamplerHeapReservedRange;
+                m_vk_device_properties.resource_heap_alignment = descriptor_heap_properties.resourceHeapAlignment;
+                m_vk_device_properties.sampler_heap_alignment = descriptor_heap_properties.samplerHeapAlignment;
+            }
+        }
 
         // Info("Vulkan General Queue Family Index: {}", m_general_queue_family_index);
         // Info("Vulkan Compute Queue Family Index: {}", m_compute_queue_family_index);

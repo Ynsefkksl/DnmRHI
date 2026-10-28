@@ -46,19 +46,18 @@ namespace DnmRHI::Vk {
 
     struct DeviceProperties {
         std::array<u8, VK_UUID_SIZE> pipeline_cache_uuid;
+        // TODO: add api for real sample map
         std::array<vk::SampleCountFlagBits, 4> sample_map{};
 
-        u32 sampled_image_descriptor_size;
-        u32 storage_image_descriptor_size;
+        u32 resource_descriptor_size; // max(sampled, storage image and ubo size)
         u32 sampler_descriptor_size;
-        u32 ubo_image_descriptor_size;
 
-        u32 image_descriptor_size_for_heap;
-        u32 buffer_descriptor_size_for_heap;
         u32 resource_descriptor_size_for_heap;
         u32 sampler_descriptor_size_for_heap;
+
         u32 resource_heap_min_reserve;
         u32 sampler_heap_min_reserve;
+
         u32 sampler_heap_alignment;
         u32 resource_heap_alignment;
     };
