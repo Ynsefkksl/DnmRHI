@@ -76,6 +76,7 @@ namespace DnmRHI {
 
         b8 shader_debug: 1{};
         b8 desc_validation: 1{};
+        // TODO: validation settings
         b8 validation_layer: 1{};
         // this can be broke nsight, rgp etc.
         b8 gpu_assisted_validaiton: 1{};

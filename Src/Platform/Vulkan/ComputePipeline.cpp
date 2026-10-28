@@ -14,7 +14,9 @@ namespace DnmRHI::Vk {
 
         const auto create_flags_2
             = vk::PipelineCreateFlags2CreateInfo{}
-                .setFlags(vk::PipelineCreateFlagBits2::eDescriptorHeapEXT)
+                .setFlags(GetVkDeviceFeatures.descriptor_heap ? 
+                    vk::PipelineCreateFlagBits2::eDescriptorBufferEXT 
+                    : vk::PipelineCreateFlagBits2::eDescriptorHeapEXT)
                 ;
 
         m_pipeline = GetVkDevice.GetDevice().createComputePipeline(
@@ -22,7 +24,7 @@ namespace DnmRHI::Vk {
             vk::ComputePipelineCreateInfo{}
                 .setLayout(GetVkDevice.GetDescriptorManager()->GetPipelineLayout())
                 .setStage(shader_stage_create_info)
-                .setPNext(GetVkDeviceFeatures.descriptor_heap ? &create_flags_2 : nullptr)
+                .setPNext(&create_flags_2)
         ).value;
 
         if (!desc.name.empty()) SET_DEBUG_NAME_VK_OBJECT(GetVkDevice.GetDevice(), m_pipeline, desc.name.data());

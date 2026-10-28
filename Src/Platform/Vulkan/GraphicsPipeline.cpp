@@ -104,7 +104,9 @@ namespace DnmRHI::Vk {
 
         const auto create_flags_2
             = vk::PipelineCreateFlags2CreateInfo{}
-                .setFlags(vk::PipelineCreateFlagBits2::eDescriptorHeapEXT)
+                .setFlags(GetVkDeviceFeatures.descriptor_heap ? 
+                    vk::PipelineCreateFlagBits2::eDescriptorBufferEXT 
+                    : vk::PipelineCreateFlagBits2::eDescriptorHeapEXT)
                 ;
 
         std::vector<vk::Format> attachments_formats;
@@ -116,7 +118,7 @@ namespace DnmRHI::Vk {
                 .setColorAttachmentFormats(attachments_formats)
                 .setDepthAttachmentFormat(To_Vk(desc.depth_stencil_state.depth_attachment))
                 .setStencilAttachmentFormat(To_Vk(desc.depth_stencil_state.stencil_attachment))
-                .setPNext(GetVkDeviceFeatures.descriptor_heap ? &create_flags_2 : nullptr)
+                .setPNext(&create_flags_2)
                 ;
 
         m_pipeline = GetVkDevice.GetDevice().createGraphicsPipeline(
