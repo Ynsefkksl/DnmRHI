@@ -15,8 +15,8 @@ namespace DnmRHI::Vk {
         const auto create_flags_2
             = vk::PipelineCreateFlags2CreateInfo{}
                 .setFlags(GetVkDeviceFeatures.descriptor_heap ? 
-                    vk::PipelineCreateFlagBits2::eDescriptorBufferEXT 
-                    : vk::PipelineCreateFlagBits2::eDescriptorHeapEXT)
+                    vk::PipelineCreateFlagBits2::eDescriptorHeapEXT
+                    : vk::PipelineCreateFlagBits2::eDescriptorBufferEXT)
                 ;
 
         m_pipeline = GetVkDevice.GetDevice().createComputePipeline(
