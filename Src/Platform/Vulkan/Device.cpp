@@ -22,12 +22,12 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 // TODO:
 namespace DnmRHI {
-    #define MAKE_BLOCK_CAPABILITIES(name) VpBlockProperties{Vp_Profile, Vp_Profile.specVersion, name}
+    #define MAKE_BLOCK_CAPABILITIES(name) VpBlockProperties{c_Vp_Profile, c_Vp_Profile.specVersion, name}
 
-    static constexpr auto Vp_Profile =
+    static constexpr auto c_Vp_Profile =
         VpProfileProperties{"VP_DNMRHI_VulkanRequirements", VK_API_VERSION_1_4}; 
 
-    static constexpr VpBlockProperties VpProfileCapabilities[] = {
+    static constexpr VpBlockProperties c_Vp_Profile_Capabilities[] = {
         MAKE_BLOCK_CAPABILITIES("Baseline"),
         MAKE_BLOCK_CAPABILITIES("DescriptorHeap"),
         MAKE_BLOCK_CAPABILITIES("PageableDeviceLocalMemory"),
@@ -145,14 +145,14 @@ namespace DnmRHI {
         std::set<std::string> ext_set;
 
         for (const char* b : c_Required_Blocks) {
-            vpGetProfileFeatures(VpFunctions{}, &Vp_Profile, b, &f2);
-            for (auto& e : BlockDeviceExts(vp_funcs, Vp_Profile, b)) ext_set.insert(e);
+            vpGetProfileFeatures(VpFunctions{}, &c_Vp_Profile, b, &f2);
+            for (auto& e : BlockDeviceExts(vp_funcs, c_Vp_Profile, b)) ext_set.insert(e);
         }
 
         for (const char* b : optional_blocks) {
-            auto exts = BlockDeviceExts(vp_funcs, Vp_Profile, b);
+            auto exts = BlockDeviceExts(vp_funcs, c_Vp_Profile, b);
             if (!std::all_of(exts.begin(), exts.end(), hasExt)) continue;
-            vpGetProfileFeatures(VpFunctions{}, &Vp_Profile, b, &f2);
+            vpGetProfileFeatures(VpFunctions{}, &c_Vp_Profile, b, &f2);
             for (auto& e : exts) ext_set.insert(e);
         }
 
@@ -185,7 +185,7 @@ namespace DnmRHI {
 
         std::vector<VpBlockProperties> out;
 
-        for (const auto &block_props : VpProfileCapabilities) {
+        for (const auto &block_props : c_Vp_Profile_Capabilities) {
             b8 is_unsupported{false};
             for (const auto &unsupported_block : prop)
                 if (std::string(block_props.blockName) == unsupported_block.blockName) 
@@ -248,11 +248,13 @@ namespace DnmRHI {
             SET_VK_FUNC(vkEnumeratePhysicalDevices);
             SET_VK_FUNC(vkGetPhysicalDeviceMemoryProperties);
             SET_VK_FUNC(vkGetPhysicalDeviceProperties2);
+            SET_VK_FUNC(vkDestroyInstance);
         }
         DEFINE_VK_FUNC(vkEnumerateInstanceExtensionProperties);
         DEFINE_VK_FUNC(vkEnumeratePhysicalDevices);
         DEFINE_VK_FUNC(vkGetPhysicalDeviceMemoryProperties);
         DEFINE_VK_FUNC(vkGetPhysicalDeviceProperties2);
+        DEFINE_VK_FUNC(vkDestroyInstance);
 
         #undef DEFINE_VK_FUNC
         #undef SET_VK_FUNC
@@ -333,9 +335,9 @@ namespace DnmRHI {
         VkBool32 supported{};
 
         u32 block_count{};
-        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &Vp_Profile, &supported, &block_count, nullptr);
+        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &c_Vp_Profile, &supported, &block_count, nullptr);
         std::vector<VpBlockProperties> block_properties(block_count);
-        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &Vp_Profile, &supported, &block_count, block_properties.data());
+        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &c_Vp_Profile, &supported, &block_count, block_properties.data());
 
         const auto supported_blocks = GetSupportedBlocks(block_properties, supported);
         // if instance has no surface ext return null
@@ -369,33 +371,32 @@ namespace DnmRHI {
         auto result = vpCreateInstance(vp_functions, &vp_instance_create_info, nullptr, reinterpret_cast<VkInstance *>(&instance));
         if (result != VK_SUCCESS) return {};
 
-        {
-            std::vector<DeviceInfo> device_infos;
-            const auto devices = instance.enumeratePhysicalDevices(query_dispatcher);
+        std::vector<DeviceInfo> device_infos;
+        const auto devices = instance.enumeratePhysicalDevices(query_dispatcher);
 
-            for (const auto device : devices) {
-                u32 device_block_count{};
-                vpGetPhysicalDeviceProfileVariantsSupport(vp_functions, instance, device, &Vp_Profile, &supported, &device_block_count, nullptr);
-                std::vector<VpBlockProperties> device_block_properties(device_block_count);
-                vpGetPhysicalDeviceProfileVariantsSupport(vp_functions, instance, device, &Vp_Profile, &supported, &device_block_count, device_block_properties.data());
+        for (const auto device : devices) {
+            u32 device_block_count{};
+            vpGetPhysicalDeviceProfileVariantsSupport(vp_functions, instance, device, &c_Vp_Profile, &supported, &device_block_count, nullptr);
+            std::vector<VpBlockProperties> device_block_properties(device_block_count);
+            vpGetPhysicalDeviceProfileVariantsSupport(vp_functions, instance, device, &c_Vp_Profile, &supported, &device_block_count, device_block_properties.data());
 
-                const auto supported_device_blocks = GetSupportedBlocks(device_block_properties, supported);
+            const auto supported_device_blocks = GetSupportedBlocks(device_block_properties, supported);
 
-                {
-                    b8 is_supported{false};
-                    for (const auto &block : device_block_properties)
-                        if (std::string(block.blockName) == "Baseline") is_supported = true;
-    
-                    if (is_supported) continue;
-                }
+            {
+                b8 is_supported{false};
+                for (const auto &block : device_block_properties)
+                    if (std::string(block.blockName) == "Baseline") is_supported = true;
 
-                device_infos.emplace_back(
-                    GetDeviceInfo(device, supported_device_blocks, query_dispatcher)
-                );
+                if (is_supported) continue;
             }
 
-            return device_infos;
+            device_infos.emplace_back(
+                GetDeviceInfo(device, supported_device_blocks, query_dispatcher)
+            );
         }
+
+        instance.destroy(nullptr, query_dispatcher);
+        return device_infos;
     }
 }
 
@@ -430,8 +431,8 @@ namespace DnmRHI::Vk {
                                 const vk::DebugUtilsMessengerCallbackDataEXT *callback_data,
                                 void *user_data) {
         constexpr auto unnecessary_messages = std::array{306759332, 2132353751, 2132353751, -2030147807, 601872502, 615892639, 1734198062};
-        // for (const i32 i : unnecessary_messages)
-        //     if (callback_data->messageIdNumber == i) return vk::True;
+        for (const i32 i : unnecessary_messages)
+            if (callback_data->messageIdNumber == i) return vk::True;
 
         if (message_severity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) {
             std::println("Vulkan Error; message id {}, message: {}", callback_data->messageIdNumber, callback_data->pMessage);
@@ -476,9 +477,9 @@ namespace DnmRHI::Vk {
         VkBool32 supported{};
 
         u32 block_count{};
-        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &Vp_Profile, &supported, &block_count, nullptr);
+        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &c_Vp_Profile, &supported, &block_count, nullptr);
         std::vector<VpBlockProperties> block_properties(block_count);
-        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &Vp_Profile, &supported, &block_count, block_properties.data());
+        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &c_Vp_Profile, &supported, &block_count, block_properties.data());
         auto supported_blocks = GetSupportedBlocks(block_properties, supported);
 
         extensions.insert_range(extensions.end(), GetSurfaceExtensions(vk::enumerateInstanceExtensionProperties(nullptr)));
