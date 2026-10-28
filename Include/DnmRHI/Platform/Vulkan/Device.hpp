@@ -34,6 +34,7 @@ namespace DnmRHI::Vk {
         b8 xcb_surface: 1;
         b8 xlib_surface: 1;
         b8 wayland_surface: 1;
+        b8 headless_surface: 1;
         b8 surface_maintenance1: 1;
 
         b8 descriptor_heap: 1;

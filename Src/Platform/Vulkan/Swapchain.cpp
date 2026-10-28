@@ -52,7 +52,7 @@ namespace DnmRHI::Vk {
                         .setDisplay(reinterpret_cast<wl_display *>(window.wayland_handle.display))
                 );
 #endif
-            default: std::unreachable();
+            default: assert(DnmRHI::WindowPlatform::eXLib != window.platform && "i forget xcb, probably your problem it is pls write"); std::unreachable();
             }
         }
     }

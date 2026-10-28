@@ -37,11 +37,11 @@ namespace DnmRHI {
             } win32_handle;
             struct XLib {
                 void *dpy;
-                void *window;
+                u64 window;
             } xlib_handle;
             struct Xcb {
                 void *connection;
-                void *window;
+                u32 window;
             } xcb_handle;
             struct Wayland {
                 void *display;
@@ -49,6 +49,28 @@ namespace DnmRHI {
             } wayland_handle;
             struct Headless {} headless;
         };
+
+        constexpr auto &SetWindowPlatform(WindowPlatform platform) noexcept { this->platform = platform; return *this; }
+        constexpr auto &SetHeadless() noexcept { 
+            platform = WindowPlatform::eHeadless;
+            this->headless = {}; return *this;
+        }
+        constexpr auto &SetWin32(void *hinstance, void *hwnd) noexcept {
+            platform = WindowPlatform::eWin32;
+            this->win32_handle = {hinstance, hwnd}; return *this;
+        }
+        constexpr auto &SetXLib(void *dpy, u64 window) noexcept { 
+            platform = WindowPlatform::eXLib;
+            this->xlib_handle = {dpy, window}; return *this; 
+        }
+        constexpr auto &SetXcb(void *connection, u32 window) noexcept { 
+            platform = WindowPlatform::eXcb;
+            this->xcb_handle = {connection, window}; return *this; 
+        }
+        constexpr auto &SetWayland(void *display, void *surface) noexcept { 
+            platform = WindowPlatform::eWayland;
+            this->wayland_handle = {display, surface}; return *this; 
+        }
     };
 
     struct SwapchainSettings {

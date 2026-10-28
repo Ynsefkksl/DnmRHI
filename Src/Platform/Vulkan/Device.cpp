@@ -225,7 +225,9 @@ namespace DnmRHI {
         for (const auto &extension : instance_extensions) {
             const auto extension_name = std::string(extension.extensionName);
 
-            if (extension_name == "VK_KHR_win32_surface")
+            if (extension_name == "VK_EXT_headless_surface")
+                out.emplace_back("VK_EXT_headless_surface");
+            else if (extension_name == "VK_KHR_win32_surface")
                 out.emplace_back("VK_KHR_win32_surface");
             else if (extension_name == "VK_KHR_wayland_surface")
                 out.emplace_back("VK_KHR_wayland_surface");
@@ -487,7 +489,10 @@ namespace DnmRHI::Vk {
 
         for (const auto *ext : extensions) {
             const std::string name(ext);
-            if (name == "VK_KHR_win32_surface")
+
+            if (name == "VK_EXT_headless_surface")
+                m_vk_device_features.headless_surface = true;
+            else if (name == "VK_KHR_win32_surface")
                 m_vk_device_features.win32_surface = true;
             else if (name == "VK_KHR_wayland_surface")
                 m_vk_device_features.wayland_surface = true;
