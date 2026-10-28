@@ -22,7 +22,7 @@ namespace DnmRHI::Vk {
             vk::ComputePipelineCreateInfo{}
                 .setLayout(GetVkDevice.GetDescriptorManager()->GetPipelineLayout())
                 .setStage(shader_stage_create_info)
-                .setPNext(GetVkDeviceFeatures.descirptor_heap ? &create_flags_2 : nullptr)
+                .setPNext(GetVkDeviceFeatures.descriptor_heap ? &create_flags_2 : nullptr)
         ).value;
 
         if (!desc.name.empty()) SET_DEBUG_NAME_VK_OBJECT(GetVkDevice.GetDevice(), m_pipeline, desc.name.data());

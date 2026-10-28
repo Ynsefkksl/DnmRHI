@@ -22,9 +22,9 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 // TODO:
 namespace DnmRHI {
-    #define MAKE_BLOCK_CAPABILITIES(name) VpBlockProperties{VpProfile, VpProfile.specVersion, name}
+    #define MAKE_BLOCK_CAPABILITIES(name) VpBlockProperties{Vp_Profile, Vp_Profile.specVersion, name}
 
-    static constexpr auto VpProfile =
+    static constexpr auto Vp_Profile =
         VpProfileProperties{"VP_DNMRHI_VulkanRequirements", VK_API_VERSION_1_4}; 
 
     static constexpr VpBlockProperties VpProfileCapabilities[] = {
@@ -42,11 +42,11 @@ namespace DnmRHI {
         MAKE_BLOCK_CAPABILITIES("DebugUtils"),
     };
 
-    static const char* RequiredBlocks[] = {
+    static const char* c_Required_Blocks[] = {
         "Baseline"
     };
 
-    static const char* OptionalBlocks[] = { "DescriptorHeap", "PageableDeviceLocalMemory", "UnifiedImageLayouts",
+    static const char* c_Optional_Blocks[] = { "DescriptorHeap", "PageableDeviceLocalMemory", "UnifiedImageLayouts",
         "ShaderStecilExport", "MeshAndTaskShaderDerivatives", "Maintenance9",
         "SwapchainMaintenance1", "DebugUtils""RayTracingInvocationReorder", "OpacityMicromap" };
 
@@ -62,7 +62,8 @@ namespace DnmRHI {
         return out;
     }
 
-    static vk::Device CreateDeviceManual(VpFunctions vp_funcs, vk::Instance instance, vk::PhysicalDevice physical_device, std::span<const vk::DeviceQueueCreateInfo> queue_infos) {
+    static vk::Device CreateDeviceManual(VpFunctions vp_funcs, vk::Instance instance, vk::PhysicalDevice physical_device, DeviceSettings device_settings, 
+        VulkanSettings vk_settings, std::span<const vk::DeviceQueueCreateInfo> queue_infos, Vk::DeviceFeatures &out_features) {
         vk::StructureChain<
             vk::PhysicalDeviceFeatures2,
             vk::PhysicalDeviceVulkan11Features,
@@ -97,24 +98,69 @@ namespace DnmRHI {
                 return name == a.extensionName; });
         };
 
-        std::set<std::string> ext_set;
+        std::vector<const char *> optional_blocks;
 
-        for (const char* b : RequiredBlocks) {
-            vpGetProfileFeatures(VpFunctions{}, &VpProfile, b, &f2);
-            for (auto& e : BlockDeviceExts(vp_funcs, VpProfile, b)) ext_set.insert(e);
+        {
+            for (const char *b : c_Optional_Blocks) {
+                const std::string block_name(b);
+
+                if (block_name == "DescriptorHeap") {
+                    out_features.descriptor_heap = !vk_settings.no_descriptor_heap;
+                    if (vk_settings.no_descriptor_heap) continue;
+                }
+                else if (block_name == "PageableDeviceLocalMemory") {
+                    out_features.pageable_device_local_memory = !vk_settings.no_pageable_device_local_memory;
+                    if (vk_settings.no_pageable_device_local_memory) continue;
+                }
+                else if (block_name == "UnifiedImageLayouts") {
+                    out_features.unified_image_layouts = !vk_settings.no_unified_image_layouts;
+                    if (vk_settings.no_unified_image_layouts) continue;
+                }
+                else if (block_name == "Maintenance9") {
+                    out_features.maintenance9 = !vk_settings.no_maintenance9;
+                    if (vk_settings.no_maintenance9) continue;
+                }
+                else if (block_name == "InputOutput16") {
+                    out_features.input_output_16 = !vk_settings.no_input_output_16;
+                    if (vk_settings.no_input_output_16) continue;
+                }
+                else if (block_name == "SwapchainMaintenance1") {
+                    out_features.swapchain_maintenance1 = !vk_settings.no_swapchain_maintenance1;
+                    if (vk_settings.no_swapchain_maintenance1) continue;
+                }
+                else if (block_name == "ShaderStencilExport") {
+                    if (!device_settings.shader_stencil_export) continue;
+                }
+                else if (block_name == "RayTracingInvocationReorder") {
+                    if (!device_settings.ray_tracing_invocation_reorder) continue;
+                }
+                else if (block_name == "OpacityMicromap") {
+                    if (!device_settings.opacity_micromap) continue;
+                }
+
+                optional_blocks.push_back(b);
+            }
         }
 
-        for (const char* b : OptionalBlocks) {
-            auto exts = BlockDeviceExts(vp_funcs, VpProfile, b);
+        std::set<std::string> ext_set;
+
+        for (const char* b : c_Required_Blocks) {
+            vpGetProfileFeatures(VpFunctions{}, &Vp_Profile, b, &f2);
+            for (auto& e : BlockDeviceExts(vp_funcs, Vp_Profile, b)) ext_set.insert(e);
+        }
+
+        for (const char* b : optional_blocks) {
+            auto exts = BlockDeviceExts(vp_funcs, Vp_Profile, b);
             if (!std::all_of(exts.begin(), exts.end(), hasExt)) continue;
-            vpGetProfileFeatures(VpFunctions{}, &VpProfile, b, &f2);
+            vpGetProfileFeatures(VpFunctions{}, &Vp_Profile, b, &f2);
             for (auto& e : exts) ext_set.insert(e);
         }
 
         auto sup = physical_device.getFeatures2<vk::PhysicalDeviceFeatures2,
                                     vk::PhysicalDeviceVulkan11Features>();
+
         chain.get<vk::PhysicalDeviceVulkan11Features>().storageInputOutput16 =
-            sup.get<vk::PhysicalDeviceVulkan11Features>().storageInputOutput16;
+            !vk_settings.no_input_output_16 && sup.get<vk::PhysicalDeviceVulkan11Features>().storageInputOutput16;
 
         std::vector<const char*> extension_names;
         for (auto& e : ext_set) extension_names.push_back(e.c_str());
@@ -287,9 +333,9 @@ namespace DnmRHI {
         VkBool32 supported{};
 
         u32 block_count{};
-        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &VpProfile, &supported, &block_count, nullptr);
+        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &Vp_Profile, &supported, &block_count, nullptr);
         std::vector<VpBlockProperties> block_properties(block_count);
-        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &VpProfile, &supported, &block_count, block_properties.data());
+        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &Vp_Profile, &supported, &block_count, block_properties.data());
 
         const auto supported_blocks = GetSupportedBlocks(block_properties, supported);
         // if instance has no surface ext return null
@@ -329,9 +375,9 @@ namespace DnmRHI {
 
             for (const auto device : devices) {
                 u32 device_block_count{};
-                vpGetPhysicalDeviceProfileVariantsSupport(vp_functions, instance, device, &VpProfile, &supported, &device_block_count, nullptr);
+                vpGetPhysicalDeviceProfileVariantsSupport(vp_functions, instance, device, &Vp_Profile, &supported, &device_block_count, nullptr);
                 std::vector<VpBlockProperties> device_block_properties(device_block_count);
-                vpGetPhysicalDeviceProfileVariantsSupport(vp_functions, instance, device, &VpProfile, &supported, &device_block_count, device_block_properties.data());
+                vpGetPhysicalDeviceProfileVariantsSupport(vp_functions, instance, device, &Vp_Profile, &supported, &device_block_count, device_block_properties.data());
 
                 const auto supported_device_blocks = GetSupportedBlocks(device_block_properties, supported);
 
@@ -430,12 +476,24 @@ namespace DnmRHI::Vk {
         VkBool32 supported{};
 
         u32 block_count{};
-        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &VpProfile, &supported, &block_count, nullptr);
+        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &Vp_Profile, &supported, &block_count, nullptr);
         std::vector<VpBlockProperties> block_properties(block_count);
-        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &VpProfile, &supported, &block_count, block_properties.data());
+        vpGetInstanceProfileVariantsSupport(vp_functions, nullptr, &Vp_Profile, &supported, &block_count, block_properties.data());
         auto supported_blocks = GetSupportedBlocks(block_properties, supported);
 
         extensions.insert_range(extensions.end(), GetSurfaceExtensions(vk::enumerateInstanceExtensionProperties(nullptr)));
+
+        for (const auto *ext : extensions) {
+            const std::string name(ext);
+            if (name == "VK_KHR_win32_surface")
+                m_vk_device_features.win32_surface = true;
+            else if (name == "VK_KHR_wayland_surface")
+                m_vk_device_features.wayland_surface = true;
+            else if (name == "VK_KHR_xcb_surface")
+                m_vk_device_features.xcb_surface = true;
+            else if (name == "VK_KHR_xlib_surface")
+                m_vk_device_features.xlib_surface = true;
+        }
 
         const auto debug_utils_it = std::ranges::find_if(supported_blocks, 
                 [] (const auto &block) {
@@ -562,13 +620,6 @@ namespace DnmRHI::Vk {
 
             //? 
             m_vk_device_properties.pipeline_cache_uuid = m_physical_device.getProperties().pipelineCacheUUID;
-
-            m_vk_device_features.descirptor_heap = m_vk_device_features.descirptor_heap && !GetVulkanSettings().no_descriptor_heap;
-            m_vk_device_features.unified_image_layouts = m_vk_device_features.unified_image_layouts && !GetVulkanSettings().no_unified_image_layouts;
-            m_vk_device_features.maintenance9 = m_vk_device_features.maintenance9 && !GetVulkanSettings().no_maintenance9;
-            m_vk_device_features.pageable_device_local_memory = m_vk_device_features.pageable_device_local_memory && !GetVulkanSettings().no_pageable_device_local_memory;
-            m_vk_device_features.swapchain_maintenance1 = m_vk_device_features.swapchain_maintenance1 && !GetVulkanSettings().no_swapchain_maintenance1;
-            m_vk_device_features.input_output_16 = m_vk_device_features.input_output_16 && !GetVulkanSettings().no_input_output_16;
         }
 
         const float queue_priorities = 1.f; 
@@ -646,11 +697,12 @@ namespace DnmRHI::Vk {
         }
 
         std::vector<vk::DeviceQueueCreateInfo> queues;
+
         queues.push_back(general_queue_create_info);
         if (compute_queue_create_info.queueCount) queues.push_back(compute_queue_create_info);
         if (copy_queue_create_info.queueCount) queues.push_back(copy_queue_create_info);
 
-        m_device = CreateDeviceManual(vp_functions, m_instance, m_physical_device, queues);
+        m_device = CreateDeviceManual(vp_functions, m_instance, m_physical_device, m_settings, m_vk_settings, queues, m_vk_device_features);
 
         m_general_queue = m_device.getQueue(m_general_queue_family_index, 0);
         m_compute_queue = compute_queue_create_info.queueCount ? m_device.getQueue(m_compute_queue_family_index, 0) : m_general_queue;
@@ -692,7 +744,7 @@ namespace DnmRHI::Vk {
 
     void Device::CreateDescriptorManager() noexcept {
         m_descriptor_manager = 
-            m_vk_device_features.descirptor_heap ? 
+            m_vk_device_features.descriptor_heap ? 
             static_cast<DescriptorManager *>(new DescriptorManagerHeap(*this)) 
             : static_cast<DescriptorManager *>(new DescriptorManagerBuffer(*this));
     }

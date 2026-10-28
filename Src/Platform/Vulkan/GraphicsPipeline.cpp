@@ -116,7 +116,7 @@ namespace DnmRHI::Vk {
                 .setColorAttachmentFormats(attachments_formats)
                 .setDepthAttachmentFormat(To_Vk(desc.depth_stencil_state.depth_attachment))
                 .setStencilAttachmentFormat(To_Vk(desc.depth_stencil_state.stencil_attachment))
-                .setPNext(GetVkDeviceFeatures.descirptor_heap ? &create_flags_2 : nullptr)
+                .setPNext(GetVkDeviceFeatures.descriptor_heap ? &create_flags_2 : nullptr)
                 ;
 
         m_pipeline = GetVkDevice.GetDevice().createGraphicsPipeline(

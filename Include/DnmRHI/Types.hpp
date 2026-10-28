@@ -6,7 +6,6 @@
 
 namespace DnmRHI {
     constexpr auto c_Frames_In_Flight_Count = 3u;
-
     constexpr auto c_Push_Constant_Size = 256u;
 
 	template<typename T>

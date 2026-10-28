@@ -122,7 +122,6 @@
                     "attachmentFragmentShadingRate" : true,
                     "pipelineFragmentShadingRate" : true,
                     "primitiveFragmentShadingRate" : true
-
                 },
                 "VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR" : {
                     "rayTracingMaintenance1" : true,

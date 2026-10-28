@@ -8,6 +8,7 @@ namespace DnmRHI::Vk {
     slang::ISession *Device::CreateCompilerSession(slang::IGlobalSession *global_session) noexcept {
         std::vector<slang::CompilerOptionEntry> options;
         
+        // TODO: descriptor offsets
         options.emplace_back(slang::CompilerOptionEntry {
             slang::CompilerOptionName::Optimization,
             { slang::CompilerOptionValueKind::Int, 3 * !GetSettings().shader_debug }
@@ -59,7 +60,7 @@ namespace DnmRHI::Vk {
             slang::CompilerOptionName::GLSLForceScalarLayout,
             { slang::CompilerOptionValueKind::Int, 1 }
         });
-        if (m_vk_device_features.descirptor_heap) {
+        if (m_vk_device_features.descriptor_heap) {
             options.emplace_back(slang::CompilerOptionEntry {
                 slang::CompilerOptionName::Capability,
                 { slang::CompilerOptionValueKind::Int, global_session->findCapability("spvDescriptorHeapEXT") }
@@ -77,7 +78,7 @@ namespace DnmRHI::Vk {
         target_desc.compilerOptionEntryCount = options.size();
         target_desc.forceGLSLScalarBufferLayout = true;
         target_desc.format = SLANG_SPIRV;
-        target_desc.profile = global_session->findProfile("sm_6_6");
+        target_desc.profile = global_session->findProfile("sm_6_7");
 
         const auto str_subgroup_size = std::to_string(m_device_info.properties.subgroup_size);
         const slang::PreprocessorMacroDesc macro{"SUBGROUP_SIZE", str_subgroup_size.c_str()}; 

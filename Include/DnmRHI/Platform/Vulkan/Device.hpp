@@ -36,7 +36,7 @@ namespace DnmRHI::Vk {
         b8 wayland_surface: 1;
         b8 surface_maintenance1: 1;
 
-        b8 descirptor_heap: 1;
+        b8 descriptor_heap: 1;
         b8 maintenance9: 1;
         b8 pageable_device_local_memory: 1;
         b8 unified_image_layouts: 1;
