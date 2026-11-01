@@ -10,8 +10,8 @@ namespace DnmRHI::Vk {
         explicit Swapchain(Vk::Device &device, const SwapchainDesc &desc) noexcept;
         ~Swapchain() noexcept;
 
-        virtual void IReCreate(const SwapchainSettings &settings) noexcept override;
-        [[nodiscard]] virtual u32 IAcquireNextImage() noexcept override;
+        virtual Result IReCreate(const SwapchainSettings &settings) noexcept override;
+        [[nodiscard]] virtual ResultOr<u32> IAcquireNextImage() noexcept override;
 
         [[nodiscard]] auto GetSurface() const noexcept { return m_surface; }
         [[nodiscard]] auto GetSwapchain() const noexcept { return m_swapchain; }

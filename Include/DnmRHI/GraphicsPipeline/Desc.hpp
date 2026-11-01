@@ -109,8 +109,7 @@ namespace DnmRHI {
     };
 
     struct DepthStencilState {
-        Format depth_attachment;
-        Format stencil_attachment;
+        Format attachment_format;
         CompareOp depth_test_compare_op;
         StencilOpState stencil_front_op;
         StencilOpState stencil_back_op;
@@ -118,8 +117,7 @@ namespace DnmRHI {
         b8 depth_write_enable;
         b8 stencil_test_enable;
 
-        constexpr auto &SetDepthAttachment(Format format) noexcept { this->depth_attachment = format; return *this; }
-        constexpr auto &SetStencilAttachment(Format format) noexcept { this->stencil_attachment = format; return *this; }
+        constexpr auto &SetAttachmentFormat(Format format) noexcept { this->attachment_format = format; return *this; }
         constexpr auto &SetDepthTestCompareOp(CompareOp op) noexcept { this->depth_test_compare_op = op; return *this; }
         constexpr auto &SetStencilFrontOp(const StencilOpState &op) noexcept { this->stencil_front_op = op; return *this; }
         constexpr auto &SetStencilBackOp(const StencilOpState &op) noexcept { this->stencil_back_op = op; return *this; }

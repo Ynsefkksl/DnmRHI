@@ -9,6 +9,7 @@
 #include <string_view>
 #include <array>
 #include <span>
+#include <vector>
 
 namespace DnmRHI {
     enum class IndexType : u8 {
@@ -356,57 +357,57 @@ namespace DnmRHI {
     protected:
         explicit CommandBuffer(Device &device, const CommandBufferDesc &desc) noexcept : m_desc(desc), Object(device, ObjectType::eCommandBuffer) {}
     public:
-        void Begin(bool one_time_submit) noexcept;
-        void End() noexcept;
-        void Reset() noexcept;
+        Result Begin(bool one_time_submit) noexcept;
+        Result End() noexcept;
+        Result Reset() noexcept;
 
         // General Queue Commands
-        void BeginRenderPass(const RenderPassDesc &desc) noexcept;
+        Result BeginRenderPass(const RenderPassDesc &desc) noexcept;
 
-        void SetViewport(std::initializer_list<const Viewport> viewport) noexcept { SetViewport(std::span(viewport)); }
-        void SetScissor(std::initializer_list<const Scissor> scissor) noexcept { SetScissor(std::span(scissor)); }
-        void SetViewport(std::span<const Viewport> viewport) noexcept;
-        void SetScissor(std::span<const Scissor> scissor) noexcept;
-        void SetStencilRef(u32 front, u32 back) noexcept;
+        Result SetViewport(std::initializer_list<const Viewport> viewport) noexcept { return SetViewport(std::span(viewport)); }
+        Result SetScissor(std::initializer_list<const Scissor> scissor) noexcept { return SetScissor(std::span(scissor)); }
+        Result SetViewport(std::span<const Viewport> viewport) noexcept;
+        Result SetScissor(std::span<const Scissor> scissor) noexcept;
+        Result SetStencilRef(u32 front, u32 back) noexcept;
 
-        void Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) noexcept;
-        void DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) noexcept;
-        void DrawIndirect(const DrawIndirectDesc &desc) noexcept;
-        void DrawIndexedIndirect(const DrawIndirectDesc &desc) noexcept;
+        Result Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) noexcept;
+        Result DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) noexcept;
+        Result DrawIndirect(const DrawIndirectDesc &desc) noexcept;
+        Result DrawIndexedIndirect(const DrawIndirectDesc &desc) noexcept;
 
-        void EndRenderPass() noexcept;
+        Result EndRenderPass() noexcept;
         
-        void BlitImage(const BlitImageDesc &desc) noexcept;
-        void ResolveImage(const ResolveImageDesc &desc) noexcept;
+        Result BlitImage(const BlitImageDesc &desc) noexcept;
+        Result ResolveImage(const ResolveImageDesc &desc) noexcept;
 
-        void BindIndexBuffer(Buffer &buffer, u64 offset, IndexType index_type) noexcept;
-        void BindPipeline(GraphicsPipeline &pipeline) noexcept;
+        Result BindIndexBuffer(Buffer &buffer, u64 offset, IndexType index_type) noexcept;
+        Result BindPipeline(GraphicsPipeline &pipeline) noexcept;
 
-        void PrepareForPresent(AccessFlags before_access, Image &swapchain_image) noexcept;
+        Result PrepareForPresent(AccessFlags before_access, Image &swapchain_image) noexcept;
 
-        void DispatchMesh(u32 x, u32 y, u32 z) noexcept;
-        void DispatchMeshIndirect(const DrawIndirectDesc &desc) noexcept;
+        Result DispatchMesh(u32 x, u32 y, u32 z) noexcept;
+        Result DispatchMeshIndirect(const DrawIndirectDesc &desc) noexcept;
         // General Queue Commands
         
         // Compute Queue Commands
-        void Dispatch(u32 x, u32 y, u32 z) noexcept;
-        void DispatchIndirect(Buffer &buffer, u32 offset) noexcept;
+        Result Dispatch(u32 x, u32 y, u32 z) noexcept;
+        Result DispatchIndirect(Buffer &buffer, u32 offset) noexcept;
 
-        void BeginConditionalRendering(Buffer &buffer, u32 offset, bool is_inverted) noexcept;
-        void EndConditionalRendering() noexcept;
+        Result BeginConditionalRendering(Buffer &buffer, u32 offset, bool is_inverted) noexcept;
+        Result EndConditionalRendering() noexcept;
 
-        void PushConstant(const auto &data, u32 offset) noexcept {
-            PushConstant(&data, sizeof(PureType<decltype(data)>), offset);
+        Result PushConstant(const auto &data, u32 offset) noexcept {
+            return PushConstant(&data, sizeof(PureType<decltype(data)>), offset);
         }
-        void PushConstant(const void *data, u32 size, u32 offset) noexcept;
-        void BindPipeline(ComputePipeline &pipeline) noexcept;
+        Result PushConstant(const void *data, u32 size, u32 offset) noexcept;
+        Result BindPipeline(ComputePipeline &pipeline) noexcept;
         // Compute Queue Commands
 
         // Copy Queue Commands
-        void CopyBuffer(const BufferCopyDesc &desc) noexcept;
-        void CopyImage(const ImageCopyDesc &desc) noexcept;
-        void CopyBufferToImage(const BufferImageCopyDesc &desc) noexcept;
-        void CopyImageToBuffer(const BufferImageCopyDesc &desc) noexcept;
+        Result CopyBuffer(const BufferCopyDesc &desc) noexcept;
+        Result CopyImage(const ImageCopyDesc &desc) noexcept;
+        Result CopyBufferToImage(const BufferImageCopyDesc &desc) noexcept;
+        Result CopyImageToBuffer(const BufferImageCopyDesc &desc) noexcept;
         // Copy Queue Commands
 
         // for non-swapchain images
@@ -415,75 +416,79 @@ namespace DnmRHI {
         // always swapchain images need initialize
         // in Vulkan translate image layout PresentSrc to selected image default layout
         // TODO: D3D12
-        void InitImage(std::initializer_list<const InitImageDesc> descs) noexcept {
-            InitImage(std::span(descs));
+        Result InitImage(std::initializer_list<const InitImageDesc> descs) noexcept {
+            return InitImage(std::span(descs));
         }
-        void InitImage(std::span<const InitImageDesc> descs) noexcept;
-        void Barrier(std::initializer_list<const BarrierDesc> barriers) noexcept {
-            Barrier(std::span(barriers));
+        Result InitImage(std::span<const InitImageDesc> descs) noexcept;
+        Result Barrier(std::initializer_list<const BarrierDesc> barriers) noexcept {
+            return Barrier(std::span(barriers));
         }
-        void Barrier(std::span<const BarrierDesc> barriers) noexcept;
+        Result Barrier(std::span<const BarrierDesc> barriers) noexcept;
 
-        void BeginDebugMarker(std::string_view name, std::array<u8, 4> color) noexcept;
-        void EndDebugMarker() noexcept;
+        Result BeginDebugMarker(std::string_view name, std::array<u8, 4> color) noexcept;
+        Result EndDebugMarker() noexcept;
 
         [[nodiscard]] const auto &GetDesc() const noexcept { return m_desc; }
     protected:
-        virtual void IBegin(bool one_time_submit) noexcept = 0;
-        virtual void IEnd() noexcept = 0;
-        virtual void IReset() noexcept = 0;
+        virtual Result IBegin(bool one_time_submit) noexcept = 0;
+        virtual Result IEnd() noexcept = 0;
+        virtual Result IReset() noexcept = 0;
 
         // General Queue Commands
-        virtual void IBeginRenderPass(const RenderPassDesc &desc) noexcept = 0;
+        virtual Result IBeginRenderPass(const RenderPassDesc &desc) noexcept = 0;
 
-        virtual void ISetViewport(std::span<const Viewport> viewport) noexcept = 0;
-        virtual void ISetScissor(std::span<const Scissor> scissor) noexcept = 0;
-        virtual void ISetStencilRef(u32 front, u32 back) noexcept = 0;
+        virtual Result ISetViewport(std::span<const Viewport> viewport) noexcept = 0;
+        virtual Result ISetScissor(std::span<const Scissor> scissor) noexcept = 0;
+        virtual Result ISetStencilRef(u32 front, u32 back) noexcept = 0;
 
-        virtual void IDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) noexcept = 0;
-        virtual void IDrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) noexcept = 0;
-        virtual void IDrawIndirect(const DrawIndirectDesc &desc) noexcept = 0;
-        virtual void IDrawIndexedIndirect(const DrawIndirectDesc &desc) noexcept = 0;
+        virtual Result IDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) noexcept = 0;
+        virtual Result IDrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) noexcept = 0;
+        virtual Result IDrawIndirect(const DrawIndirectDesc &desc) noexcept = 0;
+        virtual Result IDrawIndexedIndirect(const DrawIndirectDesc &desc) noexcept = 0;
 
-        virtual void IEndRenderPass() noexcept = 0;
+        virtual Result IEndRenderPass() noexcept = 0;
         
-        virtual void IBlitImage(const BlitImageDesc &desc) noexcept = 0;
-        virtual void IResolveImage(const ResolveImageDesc &desc) noexcept = 0;
+        virtual Result IBlitImage(const BlitImageDesc &desc) noexcept = 0;
+        virtual Result IResolveImage(const ResolveImageDesc &desc) noexcept = 0;
         
-        virtual void IBindIndexBuffer(DnmRHI::Buffer &buffer, u64 offset, IndexType index_type) noexcept = 0;
-        virtual void IBindPipeline(DnmRHI::GraphicsPipeline &pipeline) noexcept = 0;
-        virtual void IPrepareForPresent(AccessFlags before_access, DnmRHI::Image &swapchain_image) noexcept = 0;
+        virtual Result IBindIndexBuffer(DnmRHI::Buffer &buffer, u64 offset, IndexType index_type) noexcept = 0;
+        virtual Result IBindPipeline(DnmRHI::GraphicsPipeline &pipeline) noexcept = 0;
+        virtual Result IPrepareForPresent(AccessFlags before_access, DnmRHI::Image &swapchain_image) noexcept = 0;
         // General Queue Commands
         
         // Compute Queue Commands
-        virtual void IDispatch(u32 x, u32 y, u32 z) noexcept = 0;
-        virtual void IDispatchIndirect(DnmRHI::Buffer &buffer, u32 offset) noexcept = 0;
+        virtual Result IDispatch(u32 x, u32 y, u32 z) noexcept = 0;
+        virtual Result IDispatchIndirect(DnmRHI::Buffer &buffer, u32 offset) noexcept = 0;
 
-        virtual void IBeginConditionalRendering(DnmRHI::Buffer &buffer, u32 offset, bool is_inverted) noexcept = 0;
-        virtual void IEndConditionalRendering() noexcept = 0;
+        virtual Result IBeginConditionalRendering(DnmRHI::Buffer &buffer, u32 offset, bool is_inverted) noexcept = 0;
+        virtual Result IEndConditionalRendering() noexcept = 0;
 
-        virtual void IPushConstant(const void *data, u32 size, u32 offset) noexcept = 0;
-        virtual void IBindPipeline(DnmRHI::ComputePipeline &pipeline) noexcept = 0;
+        virtual Result IPushConstant(const void *data, u32 size, u32 offset) noexcept = 0;
+        virtual Result IBindPipeline(DnmRHI::ComputePipeline &pipeline) noexcept = 0;
         // Compute Queue Commands
 
         // Copy Queue Commands
-        virtual void ICopyBuffer(const BufferCopyDesc &desc) noexcept = 0;
-        virtual void ICopyImage(const ImageCopyDesc &desc) noexcept = 0;
-        virtual void ICopyBufferToImage(const BufferImageCopyDesc &desc) noexcept = 0;
-        virtual void ICopyImageToBuffer(const BufferImageCopyDesc &desc) noexcept = 0;
+        virtual Result ICopyBuffer(const BufferCopyDesc &desc) noexcept = 0;
+        virtual Result ICopyImage(const ImageCopyDesc &desc) noexcept = 0;
+        virtual Result ICopyBufferToImage(const BufferImageCopyDesc &desc) noexcept = 0;
+        virtual Result ICopyImageToBuffer(const BufferImageCopyDesc &desc) noexcept = 0;
         // Copy Queue Commands
         
-        virtual void IBarrier(std::span<const BarrierDesc> barriers) noexcept = 0;
-        virtual void IInitImage(std::span<const InitImageDesc> descs) noexcept = 0;
+        virtual Result IBarrier(std::span<const BarrierDesc> barriers) noexcept = 0;
+        virtual Result IInitImage(std::span<const InitImageDesc> descs) noexcept = 0;
 
-        virtual void IBeginDebugMarker(std::string_view name, std::array<u8, 4> color) noexcept = 0;
-        virtual void IEndDebugMarker() noexcept = 0;
+        virtual Result IBeginDebugMarker(std::string_view name, std::array<u8, 4> color) noexcept = 0;
+        virtual Result IEndDebugMarker() noexcept = 0;
 
         const CommandBufferDesc m_desc;
+        std::vector<DnmRHI::Object *> m_used_objects;
         bool m_open{};
         bool m_in_render_pass{};
         bool m_in_condition{};
         bool m_in_debug_marker{};
+
+        DnmRHI::ComputePipeline *m_bound_compute_pipeline{};
+        DnmRHI::GraphicsPipeline *m_bound_graphics_pipeline{};
     };
 }
 

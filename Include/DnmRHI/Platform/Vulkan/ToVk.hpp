@@ -83,7 +83,6 @@ namespace DnmRHI::Vk {
             case Format::eBC6H_Ufloat:             return vk::Format::eBc6HUfloatBlock;
             case Format::eBC7_Unorm:               return vk::Format::eBc7UnormBlock;
             case Format::eBC7_Srgb:                return vk::Format::eBc7SrgbBlock;
-            case Format::eS8_Uint:                 return vk::Format::eS8Uint;
             case Format::eD32_Float:               return vk::Format::eD32Sfloat;
             case Format::eD16_Unorm:               return vk::Format::eD16Unorm;
             case Format::eD16_Unorm_S8_Uint:       return vk::Format::eD16UnormS8Uint;

@@ -4,12 +4,17 @@
 
 namespace DnmRHI::Vk {
     ComputePipeline::ComputePipeline(Vk::Device &device, const ComputePipelineDesc &desc) : DnmRHI::ComputePipeline(device, desc)  {
-        const auto &vk_shader = static_cast<const Vk::Shader &>(*desc.compute_shader);
+        const auto shader_module
+            = vk::ShaderModuleCreateInfo{}
+                .setPCode(reinterpret_cast<const u32 *>(desc.compute_shader->GetEntryPointInfo().byte_codes.data()))
+                .setCodeSize(desc.compute_shader->GetEntryPointInfo().byte_codes.size())
+                ;
+
         const auto shader_stage_create_info 
             = vk::PipelineShaderStageCreateInfo{}
                 .setStage(vk::ShaderStageFlagBits::eCompute)
-                .setPName(GetVkDevice.GetVulkanSettings().generate_spirv_code_via_glsl ? "main" : vk_shader.GetEntryPointInfo().name.c_str())
-                .setModule(vk_shader.GetModule())
+                .setPName(GetVkDevice.GetVulkanSettings().generate_spirv_code_via_glsl ? "main" : desc.compute_shader->GetEntryPointInfo().name.c_str())
+                .setPNext(&shader_module)
                 ;
 
         const auto create_flags_2

@@ -38,7 +38,6 @@ namespace DnmRHI {
             case Format::eR16_Snorm: 
             case Format::eR8_Snorm: 
             case Format::eR8_Uint:
-            case Format::eS8_Uint:
             case Format::eR16_Float: 
             case Format::eD32_Float: 
             case Format::eR32_Float: 
@@ -126,7 +125,6 @@ namespace DnmRHI {
             case Format::eR32G32B32A32_Int: return FormatDataType::eInt;
             
             case Format::eR8_Uint:
-            case Format::eS8_Uint:
             case Format::eR8G8_Uint:
             case Format::eR16_Uint:
             case Format::eR8G8B8A8_Uint:
@@ -201,7 +199,6 @@ namespace DnmRHI {
             case Format::eR8_Snorm:
             case Format::eR8_Int:
             case Format::eR8_Uint:
-            case Format::eS8_Uint: return 1u;
 
             case Format::eR8G8_Unorm:
             case Format::eR8G8_Snorm:
@@ -260,7 +257,6 @@ namespace DnmRHI {
             case Format::eR8_Snorm:
             case Format::eR8_Int:
             case Format::eR8_Uint:
-            case Format::eS8_Uint:
             case Format::eR8G8_Unorm:
             case Format::eR8G8_Snorm:
             case Format::eR8G8_Int:
@@ -334,7 +330,6 @@ namespace DnmRHI {
             case Format::eR8_Snorm:
             case Format::eR8_Int:
             case Format::eR8_Uint:
-            case Format::eS8_Uint:
             case Format::eR8G8_Unorm:
             case Format::eR8G8_Snorm:
             case Format::eR8G8_Int:
@@ -404,16 +399,12 @@ namespace DnmRHI {
         return format == Format::eD32_Float || format == Format::eD16_Unorm;
     }
 
-    constexpr auto IsStencilFormat(Format format) noexcept {
-        return format == Format::eS8_Uint;
-    }
-
     constexpr auto IsDepthStencilFormat(Format format) noexcept {
         return format == Format::eD32_Float_S8_Uint || format == Format::eD24_Unorm_S8_Uint || format == Format::eD16_Unorm_S8_Uint;
     }
 
     constexpr auto IsColorFormat(Format format) noexcept {
-        return !(IsDepthFormat(format) || IsStencilFormat(format) || IsDepthStencilFormat(format) || format == Format::eUndefined);
+        return !(IsDepthFormat(format) || IsDepthStencilFormat(format) || format == Format::eUndefined);
     }
 
     constexpr auto IsCompressedFormat(Format format) noexcept {

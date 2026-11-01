@@ -1,189 +1,405 @@
 #include <DnmRHI/CommandBuffer/CommandBuffer.hpp>
 
 namespace DnmRHI {
-    void CommandBuffer::Begin(bool one_time_submit) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::Begin(bool one_time_submit) noexcept {
+        if (m_open) {
+            return Result::eInvalidUsage;
+        }
         
-        IBegin(one_time_submit);
         m_open = true;
+        return IBegin(one_time_submit);
     }
 
-    void CommandBuffer::End() noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::End() noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IEnd();
         m_open = false;
+        return IEnd();
     }
     
-    void CommandBuffer::Reset() noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::Reset() noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IReset();
+        return IReset();
     }
 
     // General Queue Commands
-    void CommandBuffer::BeginRenderPass(const RenderPassDesc &desc) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::BeginRenderPass(const RenderPassDesc &desc) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IBeginRenderPass(desc);
+        if (m_in_render_pass) {
+            return Result::eInvalidUsage;
+        }
+
+        if (m_desc.queue_type != QueueType::eGeneral) {
+            return Result::eInvalidUsage;
+        }
+
         m_in_render_pass = true;
+        return IBeginRenderPass(desc);
     }
 
-    void CommandBuffer::SetViewport(std::span<const Viewport> viewports) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::SetViewport(std::span<const Viewport> viewports) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        ISetViewport(viewports);
+        if (m_desc.queue_type != QueueType::eGeneral) {
+            return Result::eInvalidUsage;
+        }
+
+        return ISetViewport(viewports);
     }
-    void CommandBuffer::SetScissor(std::span<const Scissor> scissor) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::SetScissor(std::span<const Scissor> scissor) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        ISetScissor(scissor);
+        if (m_desc.queue_type != QueueType::eGeneral) {
+            return Result::eInvalidUsage;
+        }
+
+        return ISetScissor(scissor);
     }
-    void CommandBuffer::SetStencilRef(u32 front, u32 back) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::SetStencilRef(u32 front, u32 back) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        ISetStencilRef(front, back);
-    }
+        if (m_desc.queue_type != QueueType::eGeneral) {
+            return Result::eInvalidUsage;
+        }
 
-    void CommandBuffer::Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) noexcept {
-        // TODO: check somethings
-
-        IDraw(vertex_count, instance_count, first_vertex, first_instance);
-    }
-    void CommandBuffer::DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) noexcept {
-        // TODO: check somethings
-
-        IDrawIndexed(index_count, instance_count, first_index, vertex_offset, first_instance);
-    }
-    void CommandBuffer::DrawIndirect(const DrawIndirectDesc &desc) noexcept {
-        // TODO: check somethings
-
-        IDrawIndirect(desc);
-    }
-    void CommandBuffer::DrawIndexedIndirect(const DrawIndirectDesc &desc) noexcept {
-        // TODO: check somethings
-
-        IDrawIndexedIndirect(desc);
+        return ISetStencilRef(front, back);
     }
 
-    void CommandBuffer::EndRenderPass() noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IEndRenderPass();
+        if (!m_in_render_pass) {
+            return Result::eInvalidUsage;
+        }
+
+        if (m_desc.queue_type != QueueType::eGeneral) {
+            return Result::eInvalidUsage;
+        }
+
+        if (!m_bound_compute_pipeline) {
+            return Result::eInvalidUsage;
+        }
+
+        return IDraw(vertex_count, instance_count, first_vertex, first_instance);
+    }
+    Result CommandBuffer::DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
+
+        if (!m_in_render_pass) {
+            return Result::eInvalidUsage;
+        }
+
+        if (m_desc.queue_type != QueueType::eGeneral) {
+            return Result::eInvalidUsage;
+        }
+
+        if (!m_bound_compute_pipeline) {
+            return Result::eInvalidUsage;
+        }
+
+        return IDrawIndexed(index_count, instance_count, first_index, vertex_offset, first_instance);
+    }
+    Result CommandBuffer::DrawIndirect(const DrawIndirectDesc &desc) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
+
+        if (!m_in_render_pass) {
+            return Result::eInvalidUsage;
+        }
+
+        if (m_desc.queue_type != QueueType::eGeneral) {
+            return Result::eInvalidUsage;
+        }
+
+        if (!m_bound_compute_pipeline) {
+            return Result::eInvalidUsage;
+        }
+
+        return IDrawIndirect(desc);
+    }
+    Result CommandBuffer::DrawIndexedIndirect(const DrawIndirectDesc &desc) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
+
+        if (!m_in_render_pass) {
+            return Result::eInvalidUsage;
+        }
+
+        if (m_desc.queue_type != QueueType::eGeneral) {
+            return Result::eInvalidUsage;
+        }
+
+        if (!m_bound_compute_pipeline) {
+            return Result::eInvalidUsage;
+        }
+
+        return IDrawIndexedIndirect(desc);
+    }
+
+    Result CommandBuffer::EndRenderPass() noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
+
+        if (!m_in_render_pass) {
+            return Result::eInvalidUsage;
+        }
+
+        if (m_desc.queue_type != QueueType::eGeneral) {
+            return Result::eInvalidUsage;
+        }
+
         m_in_render_pass = false;
+        return IEndRenderPass();
     }
     
-    void CommandBuffer::BlitImage(const BlitImageDesc &desc) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::BlitImage(const BlitImageDesc &desc) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IBlitImage(desc);
+        if (m_desc.queue_type != QueueType::eGeneral) {
+            return Result::eInvalidUsage;
+        }
+
+        return IBlitImage(desc);
     }
-    void CommandBuffer::ResolveImage(const ResolveImageDesc &desc) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::ResolveImage(const ResolveImageDesc &desc) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IResolveImage(desc);
+        if (m_desc.queue_type != QueueType::eGeneral) {
+            return Result::eInvalidUsage;
+        }
+
+        return IResolveImage(desc);
     }
     
-    void CommandBuffer::BindIndexBuffer(Buffer &buffer, u64 offset, IndexType index_type) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::BindIndexBuffer(Buffer &buffer, u64 offset, IndexType index_type) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IBindIndexBuffer(buffer, offset, index_type);
+        if (m_desc.queue_type != QueueType::eGeneral) {
+            return Result::eInvalidUsage;
+        }
+
+        return IBindIndexBuffer(buffer, offset, index_type);
     }
-    void CommandBuffer::BindPipeline(GraphicsPipeline &pipeline) noexcept {
-        // TODO: check somethings
-        
-        IBindPipeline(pipeline);
+    Result CommandBuffer::BindPipeline(GraphicsPipeline &pipeline) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
+
+        if (m_desc.queue_type != QueueType::eGeneral) {
+            return Result::eInvalidUsage;
+        }
+
+        m_bound_graphics_pipeline = &pipeline;
+        return IBindPipeline(pipeline);
     }
 
-    void CommandBuffer::PrepareForPresent(AccessFlags before_access, Image &swapchain_image) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::PrepareForPresent(AccessFlags before_access, Image &swapchain_image) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IPrepareForPresent(before_access, swapchain_image);
+        if (m_desc.queue_type != QueueType::eGeneral) {
+            return Result::eInvalidUsage;
+        }
+
+        if (m_in_render_pass) {
+            return Result::eInvalidUsage;
+        }
+
+        return IPrepareForPresent(before_access, swapchain_image);
     }
     // General Queue Commands
     
     // Compute Queue Commands
-    void CommandBuffer::Dispatch(u32 x, u32 y, u32 z) noexcept {
-        // TODO: check somethings
-        
-        IDispatch(x, y, z);
+    Result CommandBuffer::Dispatch(u32 x, u32 y, u32 z) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
+
+        if (m_desc.queue_type > QueueType::eCompute) {
+            return Result::eInvalidUsage;
+        }
+
+        if (!m_bound_compute_pipeline) {
+            return Result::eInvalidUsage;
+        }
+
+        return IDispatch(x, y, z);
     }
-    void CommandBuffer::DispatchIndirect(Buffer &buffer, u32 offset) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::DispatchIndirect(Buffer &buffer, u32 offset) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IDispatchIndirect(buffer, offset);
+        if (m_desc.queue_type > QueueType::eCompute) {
+            return Result::eInvalidUsage;
+        }
+
+        if (!m_bound_compute_pipeline) {
+            return Result::eInvalidUsage;
+        }
+
+        return IDispatchIndirect(buffer, offset);
     }
 
-    void CommandBuffer::BeginConditionalRendering(Buffer &buffer, u32 offset, bool is_inverted) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::BeginConditionalRendering(Buffer &buffer, u32 offset, bool is_inverted) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IBeginConditionalRendering(buffer, offset, is_inverted);
+        if (m_desc.queue_type > QueueType::eCompute) {
+            return Result::eInvalidUsage;
+        }
+
         m_in_condition = true;
+        return IBeginConditionalRendering(buffer, offset, is_inverted);
     }
-    void CommandBuffer::EndConditionalRendering() noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::EndConditionalRendering() noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IEndConditionalRendering();
+        if (m_desc.queue_type > QueueType::eCompute) {
+            return Result::eInvalidUsage;
+        }
+
         m_in_condition = false;
+        return IEndConditionalRendering();
     }
 
-    void CommandBuffer::PushConstant(const void *data, u32 size, u32 offset) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::PushConstant(const void *data, u32 size, u32 offset) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IPushConstant(data, size, offset);
+        if (m_desc.queue_type > QueueType::eCompute) {
+            return Result::eInvalidUsage;
+        }
+
+        if (size + offset > c_Push_Constant_Size) {
+            return Result::eInvalidParameter;
+        }
+
+        return IPushConstant(data, size, offset);
     }
-    void CommandBuffer::BindPipeline(ComputePipeline &pipeline) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::BindPipeline(ComputePipeline &pipeline) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IBindPipeline(pipeline);
+        if (m_desc.queue_type > QueueType::eCompute) {
+            return Result::eInvalidUsage;
+        }
+
+        m_bound_compute_pipeline = &pipeline;
+        return IBindPipeline(pipeline);
     }
     // Compute Queue Commands
 
     // Copy Queue Commands
-    void CommandBuffer::CopyBuffer(const BufferCopyDesc &desc) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::CopyBuffer(const BufferCopyDesc &desc) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        ICopyBuffer(desc);
+        return ICopyBuffer(desc);
     }
-    void CommandBuffer::CopyImage(const ImageCopyDesc &desc) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::CopyImage(const ImageCopyDesc &desc) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        ICopyImage(desc);
+        return ICopyImage(desc);
     }
-    void CommandBuffer::CopyBufferToImage(const BufferImageCopyDesc &desc) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::CopyBufferToImage(const BufferImageCopyDesc &desc) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        ICopyBufferToImage(desc);
+        return ICopyBufferToImage(desc);
     }
-    void CommandBuffer::CopyImageToBuffer(const BufferImageCopyDesc &desc) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::CopyImageToBuffer(const BufferImageCopyDesc &desc) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        ICopyImageToBuffer(desc);
+        return ICopyImageToBuffer(desc);
     }
     // Copy Queue Commands
 
-    void CommandBuffer::Barrier(std::span<const BarrierDesc> barriers) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::Barrier(std::span<const BarrierDesc> barriers) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IBarrier(barriers);
+        if (m_in_render_pass) {
+            return Result::eInvalidUsage;
+        }
+
+        return IBarrier(barriers);
     }
 
-    void CommandBuffer::InitImage(std::span<const InitImageDesc> descs) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::InitImage(std::span<const InitImageDesc> descs) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IInitImage(descs);
+        if (m_in_render_pass) {
+            return Result::eInvalidUsage;
+        }
+
+        return IInitImage(descs);
     }
 
-    void CommandBuffer::BeginDebugMarker(std::string_view name, std::array<u8, 4> color) noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::BeginDebugMarker(std::string_view name, std::array<u8, 4> color) noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IBeginDebugMarker(name, color);
+        if (m_in_debug_marker) {
+            return Result::eInvalidUsage;
+        }
+
         m_in_debug_marker = true;
+        return IBeginDebugMarker(name, color);
     }
-    void CommandBuffer::EndDebugMarker() noexcept {
-        // TODO: check somethings
+    Result CommandBuffer::EndDebugMarker() noexcept {
+        if (!m_open) {
+            return Result::eInvalidUsage;
+        }
 
-        IEndDebugMarker();
+        if (!m_in_debug_marker) {
+            return Result::eInvalidUsage;
+        }
+
         m_in_debug_marker = false;
+        return IEndDebugMarker();
     }
 }

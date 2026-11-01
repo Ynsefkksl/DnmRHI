@@ -2,6 +2,7 @@
 
 #include <DnmRHI/Common/Subresource.hpp>
 #include <DnmRHI/Shader/EntryPoint.hpp>
+#include <functional>
 #include <span>
 #include <array>
 
@@ -12,6 +13,22 @@ namespace slang {
 }
 
 namespace DnmRHI {
+    enum class MessageSeverty {
+        eInfo,
+        eWarn,
+        eError
+    };
+
+    enum class MessageCatagory {
+        eGraphicsBackend,
+        eInvalidDesc,
+        eShaderCompile
+    };
+
+    enum class MessageID : u64{};
+
+    using DebugCallback = std::function<void(MessageSeverty severty, MessageCatagory catagory, MessageID message_id, std::string_view message)>;
+
     struct PresentDesc {
         Swapchain *swapchain;
 
@@ -31,8 +48,8 @@ namespace DnmRHI {
         std::span<const SemaphoreValueDesc> wait_semaphores;
         std::span<const SemaphoreValueDesc> signal_semaphores;
 
-        constexpr auto &SetCommandBuffer(std::initializer_list<CommandBuffer *const> command_buffer) noexcept { this->command_buffers = command_buffer; return *this; }
         constexpr auto &SetCommandBuffer(std::span<CommandBuffer *const> command_buffer) noexcept { this->command_buffers = command_buffer; return *this; }
+        constexpr auto &SetCommandBuffer(std::initializer_list<CommandBuffer *const> command_buffer) noexcept { this->command_buffers = command_buffer; return *this; }
         constexpr auto &SetWaitSemaphore(std::span<const SemaphoreValueDesc> wait_semaphore) noexcept { this->wait_semaphores = wait_semaphore; return *this; }
         constexpr auto &SetWaitSemaphore(std::initializer_list<const SemaphoreValueDesc> wait_semaphore) noexcept { this->wait_semaphores = wait_semaphore; return *this; }
         constexpr auto &SetSignalSemaphore(std::span<const SemaphoreValueDesc> signal_semaphore) noexcept { this->signal_semaphores = signal_semaphore; return *this; }
@@ -106,13 +123,13 @@ namespace DnmRHI {
         std::array<u8, 16> driver_uuid;
     };
 
-    [[nodiscard]] std::vector<DeviceInfo> QuerySupportedD3D12Devices();
-    [[nodiscard]] std::vector<DeviceInfo> QuerySupportedVulkanDevices();
+    [[nodiscard]] std::vector<DeviceInfo> QuerySupportedD3D12Devices() noexcept;
+    [[nodiscard]] std::vector<DeviceInfo> QuerySupportedVulkanDevices() noexcept;
 
     // device_info must be same with QuerySupported*Devices output
-    [[nodiscard]] Device *CreateD3D12Device(const DeviceInfo &device_info, DeviceSettings device_settings, const D3D12Settings &d3d12_settings);
-    [[nodiscard]] Device *CreateVulkanDevice(const DeviceInfo &device_info, DeviceSettings device_settings, const VulkanSettings &vk_settings);
-    [[nodiscard]] Device *CreateDevice(const DeviceInfo &device_info, DeviceSettings device_settings);
+    [[nodiscard]] ResultOr<Device *> CreateD3D12Device(const DeviceInfo &device_info, DeviceSettings device_settings, const D3D12Settings &d3d12_settings) noexcept;
+    [[nodiscard]] ResultOr<Device *> CreateVulkanDevice(const DeviceInfo &device_info, DeviceSettings device_settings, const VulkanSettings &vk_settings) noexcept;
+    [[nodiscard]] ResultOr<Device *> CreateDevice(const DeviceInfo &device_info, DeviceSettings device_settings) noexcept;
 
     class Device {
     protected:
@@ -120,25 +137,26 @@ namespace DnmRHI {
     public:
         virtual ~Device();
 
-        void Init() noexcept;
+        Result Init() noexcept;
 
-        void SetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept;
-        void SetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept;
-        void SetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept;
-        void SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept;
+        Result SetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept;
+        Result SetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept;
+        Result SetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept;
+        Result SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept;
 
-        [[nodiscard]] Buffer *CreateBuffer(const BufferDesc &desc) noexcept;
-        [[nodiscard]] Image *CreateImage(const ImageDesc &desc) noexcept;
-        [[nodiscard]] CommandBuffer *CreateCommandBuffer(const CommandBufferDesc &desc) noexcept;
-        [[nodiscard]] GraphicsPipeline *CreateGraphicsPipeline(const GraphicsPipelineDesc &desc) noexcept;
-        [[nodiscard]] ComputePipeline *CreateComputePipeline(const ComputePipelineDesc &desc) noexcept;
-        [[nodiscard]] Semaphore *CreateSemaphore(const SemaphoreDesc &desc) noexcept;
-        [[nodiscard]] Swapchain *CreateSwapchain(const SwapchainDesc &desc) noexcept;
-        [[nodiscard]] Shader *CreateShader(const ShaderDesc &desc) noexcept;
+        [[nodiscard]] ResultOr<Buffer *> CreateBuffer(const BufferDesc &desc) noexcept;
+        [[nodiscard]] ResultOr<Image *> CreateImage(const ImageDesc &desc) noexcept;
+        [[nodiscard]] ResultOr<CommandBuffer *> CreateCommandBuffer(const CommandBufferDesc &desc) noexcept;
+        [[nodiscard]] ResultOr<GraphicsPipeline *> CreateGraphicsPipeline(const GraphicsPipelineDesc &desc) noexcept;
+        [[nodiscard]] ResultOr<ComputePipeline *> CreateComputePipeline(const ComputePipelineDesc &desc) noexcept;
+        [[nodiscard]] ResultOr<Semaphore *> CreateSemaphore(const SemaphoreDesc &desc) noexcept;
+        [[nodiscard]] ResultOr<Swapchain *> CreateSwapchain(const SwapchainDesc &desc) noexcept;
+        // TODO: remove shader object
+        [[nodiscard]] ResultOr<Shader *> CreateShader(const ShaderDesc &desc) noexcept;
 
-        void SubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept;
-        void WaitSemaphore(const WaitSemaphoreDesc &desc) noexcept;
-        void Present(const PresentDesc &desc) noexcept;
+        Result SubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept;
+        Result WaitSemaphore(const WaitSemaphoreDesc &desc) noexcept;
+        Result Present(const PresentDesc &desc) noexcept;
 
         [[nodiscard]] const auto &GetFeatures() const noexcept { return m_device_info.features; }
         [[nodiscard]] const auto &GetProperties() const noexcept { return m_device_info.properties; }
@@ -153,25 +171,25 @@ namespace DnmRHI {
         [[nodiscard]] auto IsIntel() const noexcept { return m_device_info.properties.vendor == GpuVendor::eIntel; }
         [[nodiscard]] auto IsQualcomm() const noexcept { return m_device_info.properties.vendor == GpuVendor::eQualcomm; }
     protected:
-        virtual void IInit() noexcept = 0;
+        virtual Result IInit() noexcept = 0;
 
-        [[nodiscard]] virtual DnmRHI::Buffer *ICreateBuffer(const BufferDesc &desc) noexcept = 0;
-        [[nodiscard]] virtual DnmRHI::Image *ICreateImage(const ImageDesc &desc) noexcept = 0;
-        [[nodiscard]] virtual DnmRHI::CommandBuffer *ICreateCommandBuffer(const CommandBufferDesc &desc) noexcept = 0;
-        [[nodiscard]] virtual DnmRHI::GraphicsPipeline *ICreateGraphicsPipeline(const GraphicsPipelineDesc &desc) noexcept = 0;
-        [[nodiscard]] virtual DnmRHI::ComputePipeline *ICreateComputePipeline(const ComputePipelineDesc &desc) noexcept = 0;
-        [[nodiscard]] virtual DnmRHI::Semaphore *ICreateSemaphore(const SemaphoreDesc &desc) noexcept = 0;
-        [[nodiscard]] virtual DnmRHI::Swapchain *ICreateSwapchain(const SwapchainDesc &desc) noexcept = 0;
-        [[nodiscard]] virtual DnmRHI::Shader *ICreateShader(const ShaderEntryPoint &entry_point) noexcept = 0;
+        [[nodiscard]] virtual ResultOr<DnmRHI::Buffer *> ICreateBuffer(const BufferDesc &desc) noexcept = 0;
+        [[nodiscard]] virtual ResultOr<DnmRHI::Image *> ICreateImage(const ImageDesc &desc) noexcept = 0;
+        [[nodiscard]] virtual ResultOr<DnmRHI::CommandBuffer *> ICreateCommandBuffer(const CommandBufferDesc &desc) noexcept = 0;
+        [[nodiscard]] virtual ResultOr<DnmRHI::GraphicsPipeline *> ICreateGraphicsPipeline(const GraphicsPipelineDesc &desc) noexcept = 0;
+        [[nodiscard]] virtual ResultOr<DnmRHI::ComputePipeline *> ICreateComputePipeline(const ComputePipelineDesc &desc) noexcept = 0;
+        [[nodiscard]] virtual ResultOr<DnmRHI::Semaphore *> ICreateSemaphore(const SemaphoreDesc &desc) noexcept = 0;
+        [[nodiscard]] virtual ResultOr<DnmRHI::Swapchain *> ICreateSwapchain(const SwapchainDesc &desc) noexcept = 0;
+        [[nodiscard]] virtual ResultOr<DnmRHI::Shader *> ICreateShader(const ShaderEntryPoint &entry_point) noexcept = 0;
 
-        virtual void ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept = 0;
-        virtual void ISetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept = 0;
-        virtual void ISetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept = 0;
-        virtual void ISetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept = 0;
+        virtual Result ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept = 0;
+        virtual Result ISetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept = 0;
+        virtual Result ISetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept = 0;
+        virtual Result ISetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept = 0;
 
-        virtual void ISubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept = 0;
-        virtual void IWaitSemaphore(const WaitSemaphoreDesc &desc) noexcept = 0;
-        virtual void IPresent(const PresentDesc &desc) noexcept = 0;
+        virtual Result ISubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept = 0;
+        virtual Result IWaitSemaphore(const WaitSemaphoreDesc &desc) noexcept = 0;
+        virtual Result IPresent(const PresentDesc &desc) noexcept = 0;
         [[nodiscard]] virtual slang::ISession *CreateCompilerSession(slang::IGlobalSession *global_session) noexcept = 0;
 
         DeviceInfo m_device_info{};

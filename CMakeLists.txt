@@ -32,7 +32,10 @@ file(GLOB_RECURSE Sources CONFIGURE_DEPENDS
 if(VULKAN_BACKEND)
     file(GLOB_RECURSE VulkanSources CONFIGURE_DEPENDS 
         Src/Platform/Vulkan/*.cpp)
+    file(GLOB_RECURSE VulkanExternalSources CONFIGURE_DEPENDS 
+        External/vulkan/*.cpp)
     list(APPEND Sources ${VulkanSources})
+    list(APPEND Sources ${VulkanExternalSources})
 endif()
 
 if(D3D12_BACKEND)
@@ -47,6 +50,7 @@ add_library(DnmRHI::DnmRHI ALIAS DnmRHI)
 
 target_include_directories(DnmRHI PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/Include
+    ${CMAKE_CURRENT_SOURCE_DIR}/External
     $ENV{VULKAN_SDK}/include
 )
 

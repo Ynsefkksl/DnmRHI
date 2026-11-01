@@ -15,55 +15,55 @@ namespace DnmRHI::Vk {
             GetVkDevice.GetDevice().destroy(m_command_pool);
         }
 
-        virtual void IBegin(bool one_time_submit) noexcept override;
-        virtual void IEnd() noexcept override;
-        virtual void IReset() noexcept override;
+        virtual Result IBegin(bool one_time_submit) noexcept override;
+        virtual Result IEnd() noexcept override;
+        virtual Result IReset() noexcept override;
 
         // General Queue Commands
-        virtual void IBeginRenderPass(const RenderPassDesc &desc) noexcept override;
+        virtual Result IBeginRenderPass(const RenderPassDesc &desc) noexcept override;
 
-        virtual void ISetViewport(std::span<const Viewport> viewport) noexcept override;
-        virtual void ISetScissor(std::span<const Scissor> scissor) noexcept override;
-        virtual void ISetStencilRef(u32 value, u32 back) noexcept override;
+        virtual Result ISetViewport(std::span<const Viewport> viewport) noexcept override;
+        virtual Result ISetScissor(std::span<const Scissor> scissor) noexcept override;
+        virtual Result ISetStencilRef(u32 front, u32 back) noexcept override;
 
-        virtual void IDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) noexcept override;
-        virtual void IDrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) noexcept override;
-        virtual void IDrawIndirect(const DrawIndirectDesc &desc) noexcept override;
-        virtual void IDrawIndexedIndirect(const DrawIndirectDesc &desc) noexcept override;
+        virtual Result IDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) noexcept override;
+        virtual Result IDrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) noexcept override;
+        virtual Result IDrawIndirect(const DrawIndirectDesc &desc) noexcept override;
+        virtual Result IDrawIndexedIndirect(const DrawIndirectDesc &desc) noexcept override;
 
-        virtual void IEndRenderPass() noexcept override;
+        virtual Result IEndRenderPass() noexcept override;
         
-        virtual void IBlitImage(const BlitImageDesc &desc) noexcept override;
-        virtual void IResolveImage(const ResolveImageDesc &desc) noexcept override;
+        virtual Result IBlitImage(const BlitImageDesc &desc) noexcept override;
+        virtual Result IResolveImage(const ResolveImageDesc &desc) noexcept override;
         
-        virtual void IBindIndexBuffer(DnmRHI::Buffer &buffer, u64 offset, IndexType index_type) noexcept override;
-        virtual void IBindPipeline(DnmRHI::GraphicsPipeline &pipeline) noexcept override;
-        virtual void IPrepareForPresent(AccessFlags before_access, DnmRHI::Image &swapchain_image) noexcept override;
+        virtual Result IBindIndexBuffer(DnmRHI::Buffer &buffer, u64 offset, IndexType index_type) noexcept override;
+        virtual Result IBindPipeline(DnmRHI::GraphicsPipeline &pipeline) noexcept override;
+        virtual Result IPrepareForPresent(AccessFlags before_access, DnmRHI::Image &swapchain_image) noexcept override;
         // General Queue Commands
         
         // Compute Queue Commands
-        virtual void IDispatch(u32 x, u32 y, u32 z) noexcept override;
-        virtual void IDispatchIndirect(DnmRHI::Buffer &buffer, u32 offset) noexcept override;
+        virtual Result IDispatch(u32 x, u32 y, u32 z) noexcept override;
+        virtual Result IDispatchIndirect(DnmRHI::Buffer &buffer, u32 offset) noexcept override;
 
-        virtual void IBeginConditionalRendering(DnmRHI::Buffer &buffer, u32 offset, bool is_inverted) noexcept override;
-        virtual void IEndConditionalRendering() noexcept override;
+        virtual Result IBeginConditionalRendering(DnmRHI::Buffer &buffer, u32 offset, bool is_inverted) noexcept override;
+        virtual Result IEndConditionalRendering() noexcept override;
 
-        virtual void IPushConstant(const void *data, u32 size, u32 offset) noexcept override;
-        virtual void IBindPipeline(DnmRHI::ComputePipeline &pipeline) noexcept override;
+        virtual Result IPushConstant(const void *data, u32 size, u32 offset) noexcept override;
+        virtual Result IBindPipeline(DnmRHI::ComputePipeline &pipeline) noexcept override;
         // Compute Queue Commands
 
         // Copy Queue Commands
-        virtual void ICopyBuffer(const BufferCopyDesc &desc) noexcept override;
-        virtual void ICopyImage(const ImageCopyDesc &desc) noexcept override;
-        virtual void ICopyBufferToImage(const BufferImageCopyDesc &desc) noexcept override;
-        virtual void ICopyImageToBuffer(const BufferImageCopyDesc &desc) noexcept override;
+        virtual Result ICopyBuffer(const BufferCopyDesc &desc) noexcept override;
+        virtual Result ICopyImage(const ImageCopyDesc &desc) noexcept override;
+        virtual Result ICopyBufferToImage(const BufferImageCopyDesc &desc) noexcept override;
+        virtual Result ICopyImageToBuffer(const BufferImageCopyDesc &desc) noexcept override;
         // Copy Queue Commands
-
-        virtual void IBarrier(std::span<const BarrierDesc> barriers) noexcept override;
-        virtual void IInitImage(std::span<const InitImageDesc> descs) noexcept override;
         
-        virtual void IBeginDebugMarker(std::string_view name, std::array<u8, 4> color) noexcept override;
-        virtual void IEndDebugMarker() noexcept override;
+        virtual Result IBarrier(std::span<const BarrierDesc> barriers) noexcept override;
+        virtual Result IInitImage(std::span<const InitImageDesc> descs) noexcept override;
+
+        virtual Result IBeginDebugMarker(std::string_view name, std::array<u8, 4> color) noexcept override;
+        virtual Result IEndDebugMarker() noexcept override;
 
         [[nodiscard]] auto GetCommandBuffer() const noexcept { return m_command_buffer; }
         [[nodiscard]] auto GetCommandPool() const noexcept { return m_command_pool; }
@@ -101,7 +101,6 @@ namespace DnmRHI::Vk {
         vk::CommandBuffer m_command_buffer;
         vk::CommandPool m_command_pool;
 
-        std::vector<DnmRHI::Object *> m_used_objects;
         // 1. layout for color/depth, 2. layout for stencil
         std::unordered_map<const Vk::Image *, std::array<vk::ImageLayout, 2>> m_image_layouts;
 

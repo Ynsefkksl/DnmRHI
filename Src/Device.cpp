@@ -1,23 +1,268 @@
+#include "DnmRHI/Common/FormatInfo.hpp"
 #include <DnmRHI/Device/Device.hpp>
 #include <DnmRHI/Device/D3D12Settings.hpp>
 #include <DnmRHI/Device/VulkanSettings.hpp>
 #include <DnmRHI/Shader/Compiler.hpp>
 #include <DnmRHI/Shader/Desc.hpp>
 
+#include <DnmRHI/Buffer/Buffer.hpp>
+#include <DnmRHI/Image/Image.hpp>
+#include <DnmRHI/CommandBuffer/CommandBuffer.hpp>
+#include <DnmRHI/GraphicsPipeline/GraphicsPipeline.hpp>
+#include <DnmRHI/ComputePipeline/ComputePipeline.hpp>
+#include <DnmRHI/Semaphore/Semaphore.hpp>
+#include <DnmRHI/Swapchain/Swapchain.hpp>
+#include <DnmRHI/Shader/Shader.hpp>
+
 namespace DnmRHI {
     #if !defined(DnmRHI_Backend_D3D12)
-    [[nodiscard]] Device *CreateD3D12Device(const DeviceInfo &device_info, DeviceSettings device_settings, const D3D12Settings &d3d12_settings) {
-        return nullptr;
-    }
-    #endif
+        [[nodiscard]] std::vector<DeviceInfo> QuerySupportedD3D12Devices() noexcept {
+            return {};
+        }
 
-    #if !defined(DnmRHI_Backend_Vulkan)
-        [[nodiscard]] Device *CreateVulkanDevice(const DeviceInfo &device_info, DeviceSettings device_settings, const VulkanSettings &vk_settings) {
-            return nullptr;
+        [[nodiscard]] ResultOr<Device *> CreateD3D12Device(const DeviceInfo &device_info, DeviceSettings device_settings, const D3D12Settings &d3d12_settings) noexcept {
+            return std::unexpected(Result::eInvalidParameter);
         }
     #endif
 
-    Device *CreateDevice(const DeviceInfo &device_info, DeviceSettings device_settings) {
+    #if !defined(DnmRHI_Backend_Vulkan)
+        [[nodiscard]] std::vector<DeviceInfo> QuerySupportedVulkanDevices() noexcept {
+            return {};
+        }
+
+        [[nodiscard]] ResultOr<Device *> CreateVulkanDevice(const DeviceInfo &device_info, DeviceSettings device_settings, const VulkanSettings &vk_settings) noexcept {
+            return std::unexpected(Result::eInvalidParameter);
+        }
+    #endif
+
+    // TODO: maybe these have own file
+    static constexpr b8 CheckDesc(Device &device, const BufferDesc &desc) noexcept {
+        b8 is_valid = true;
+        
+        if (desc.size == 0) {
+            is_valid = false;
+        }
+        if (desc.flags.None()) {
+            is_valid = false;
+        }
+        // min align must 256 bytes for uniform buffer, d3d12 requirement
+        if (desc.flags.Has(BufferFlagBit::eUniform) && (desc.align >> 8) != 0) {
+            is_valid = false;
+        }
+        // min align must 64 bytes for storage buffer
+        if (desc.flags.Has(BufferFlagBit::eStorage) && (desc.align >> 6) != 0) {
+            is_valid = false;
+        }
+
+        return is_valid;
+    }
+
+    static constexpr b8 CheckDesc(Device &device, const ImageDesc &desc) noexcept {
+        b8 is_valid = true;
+        
+        if (desc.extent.width == 0 || desc.extent.height == 0 || desc.extent.depth == 0) {
+            is_valid = false;
+        }
+        if (desc.flags.None()) {
+            is_valid = false;
+        }
+        if (desc.format == Format::eUndefined) {
+            is_valid = false;
+        }
+        if (desc.mipmap_count == 0) {
+            is_valid = false;
+        }
+        if (desc.type == ImageType::e3D && desc.flags.Has(ImageFlagBit::eStorage)) {
+            is_valid = false;
+        }
+        if (
+            desc.flags.Has(DnmRHI::ImageFlagBit::eGeneralQueue)
+            | desc.flags.Has(DnmRHI::ImageFlagBit::eComputeQueue)
+            | desc.flags.Has(DnmRHI::ImageFlagBit::eCopyQueue)
+        ) {
+            const b8 has_general_queue = desc.flags.Has(DnmRHI::ImageFlagBit::eGeneralQueue);
+            const b8 has_compute_queue = desc.flags.Has(DnmRHI::ImageFlagBit::eComputeQueue);
+            const b8 has_copy_queue = desc.flags.Has(DnmRHI::ImageFlagBit::eCopyQueue);
+
+            if (!has_general_queue) {
+                if (desc.flags.Has(ImageFlagBit::eAttachment) || desc.flags.Has(ImageFlagBit::eVariableRateShadingAttachment)) {
+                    is_valid = false;
+                }
+            }
+
+            if (!has_general_queue && !has_compute_queue) {
+                if (desc.flags.Has(ImageFlagBit::eStorage) | desc.flags.Has(ImageFlagBit::eSampled)) {
+                    is_valid = false;
+                }
+            }
+        }
+
+        return is_valid;
+    }
+
+    static constexpr b8 CheckDesc(Device &device, const ComputePipelineDesc &desc) noexcept {
+        b8 is_valid = true;
+
+        if (!desc.compute_shader) {
+            is_valid = false;
+        }
+        
+        return is_valid;
+    }
+
+    static constexpr b8 CheckDesc(Device &device, const GraphicsPipelineDesc &desc) noexcept {
+        b8 is_valid = true;
+        
+        for (const auto &color_output_state : desc.color_output_state.color_attachment_formats) {
+            if (color_output_state.format == Format::eUndefined) {
+                is_valid = false;
+                break;
+            }
+        }
+
+        {
+            if (desc.rasterization_state.viewport_count == 0) {
+                is_valid = false;
+            }
+
+            if (desc.rasterization_state.scissor_count == 0) {
+                is_valid = false;
+            }
+        }
+
+        // TODO: shader input outputs is valid
+        {
+            ShaderStageFlags stages;
+
+            for (const auto *shader : desc.shaders) {
+                if (!shader) {
+                    is_valid = false;
+                    break;
+                }
+
+                if (stages.Has(shader->GetEntryPointInfo().flag_bit)) {
+                    is_valid = false;
+                    break;
+                }
+
+                stages |= shader->GetEntryPointInfo().flag_bit;
+            }
+
+            if (!(stages.Has(ShaderStageFlagBit::eVertex | ShaderStageFlagBit::eFragment)
+                | stages.Has(ShaderStageFlagBit::eTask | ShaderStageFlagBit::eMesh | ShaderStageFlagBit::eFragment)
+                | stages.Has(ShaderStageFlagBit::eMesh | ShaderStageFlagBit::eFragment)
+            )) {
+                is_valid = false;
+            }
+        }
+
+        return is_valid;
+    }
+
+    static constexpr b8 CheckDesc(Device &device, const CommandBufferDesc &desc) noexcept {
+        b8 is_valid = true;
+        
+        if (desc.queue_type == QueueType::eNone || desc.queue_type == QueueType::Count) {
+            is_valid = false;
+        }
+
+        return is_valid;
+    }
+
+    static constexpr b8 CheckDesc(Device &device, const SemaphoreDesc &desc) noexcept {
+        b8 is_valid = true;
+        return is_valid;
+    }
+
+    static constexpr b8 CheckDesc(Device &device, const SwapchainDesc &desc) noexcept {
+        b8 is_valid = true;
+        return is_valid;
+    }
+
+    static constexpr b8 CheckDesc(Device &device, const ShaderDesc &desc) noexcept {
+        b8 is_valid = true;
+        
+        if (!std::filesystem::exists(desc.file)) {
+            is_valid = false;
+        }
+
+        return is_valid;
+    }
+
+    static constexpr b8 CheckBufferSubresource(Device &device, const Buffer &buffer, BufferSubresource &subres) noexcept {
+        b8 is_valid = true;
+
+        if (subres.offset + subres.size > buffer.GetDesc().size) {
+            is_valid = false;
+        }
+
+        if (subres.size > buffer.GetDesc().size) {
+            subres.size = buffer.GetDesc().size;
+        }
+
+        return is_valid;
+    }
+
+    static constexpr b8 CheckImageSubresource(Device &device, const Image &image, ImageSubresource &subres) noexcept {
+        b8 is_valid = true;
+        
+        {
+            if (subres.base_mipmap + subres.mipmap_count > image.GetDesc().mipmap_count) {
+                is_valid = false;
+            }
+    
+            if (subres.mipmap_count > image.GetDesc().mipmap_count) {
+                subres.mipmap_count = image.GetDesc().mipmap_count;
+            }
+        }
+
+        if (image.GetDesc().type == ImageType::e2D) {
+            if (subres.base_layer + subres.layer_count > image.GetDesc().extent.depth) {
+                is_valid = false;
+            }
+    
+            if (subres.layer_count > image.GetDesc().extent.depth) {
+                subres.layer_count = image.GetDesc().extent.depth;
+            }
+        }
+        else {
+            if (!(subres.base_layer == 0 && subres.layer_count == 1)) {
+                is_valid = false;
+            }
+        }
+
+        if (!(image.GetDesc().type == ImageType::e3D && subres.type == ImageSubresourceType::e3D)) {
+            is_valid = false;
+        }
+
+        if (image.GetDesc().type == ImageType::e2D && subres.type == ImageSubresourceType::e3D) {
+            is_valid = false;
+        }
+
+        if (subres.layer_count != 6 && subres.type == ImageSubresourceType::eCube) {
+            is_valid = false;
+        }
+
+        if (subres.layer_count % 6 != 0 && subres.type == ImageSubresourceType::eCubeArray) {
+            is_valid = false;
+        }
+
+        if (subres.aspect_flags.None()) {
+            if (IsDepthStencilFormat(image.GetDesc().format)) {
+                subres.aspect_flags = AspectFlagBit::eDepth | AspectFlagBit::eStencil;
+            }
+            else if (IsDepthFormat(image.GetDesc().format)) {
+                subres.aspect_flags = AspectFlagBit::eDepth;
+            }
+            else {
+                subres.aspect_flags = AspectFlagBit::eColor;
+            }
+        }
+
+        return is_valid;
+    }
+
+    ResultOr<Device *> CreateDevice(const DeviceInfo &device_info, DeviceSettings device_settings) noexcept {
         switch (device_info.api) {
             case GraphicsApi::eVulkan: return CreateVulkanDevice(device_info, device_settings, {});
             case GraphicsApi::eD3D12: return CreateD3D12Device(device_info, device_settings, {});
@@ -29,89 +274,177 @@ namespace DnmRHI {
         delete m_shader_compiler;
     }
 
-    void Device::Init() noexcept { 
-        // TODO: check something
+    Result Device::Init() noexcept {
+        // is already initialized
+        if (m_shader_compiler)
+            return Result::eInvalidUsage;
+
         m_shader_compiler = new ShaderCompiler(*this); 
-        IInit(); 
+        return IInit(); 
     }
 
-    Buffer *Device::CreateBuffer(const BufferDesc &desc) noexcept {
-        // TODO: check if desc is valid
+    ResultOr<Buffer *> Device::CreateBuffer(const BufferDesc &desc) noexcept {
+        if (!CheckDesc(*this, desc))
+            return std::unexpected(Result::eInvalidParameter);
+
         return ICreateBuffer(desc);
     }
 
-    Image *Device::CreateImage(const ImageDesc &desc) noexcept {
-        // TODO: check if desc is valid
+    ResultOr<Image *> Device::CreateImage(const ImageDesc &desc) noexcept {
+        if (!CheckDesc(*this, desc))
+            return std::unexpected(Result::eInvalidParameter);
+
         return ICreateImage(desc);
     }
 
-    CommandBuffer *Device::CreateCommandBuffer(const CommandBufferDesc &desc) noexcept {
-        // TODO: check if desc is valid
+    ResultOr<CommandBuffer *> Device::CreateCommandBuffer(const CommandBufferDesc &desc) noexcept {
+        if (!CheckDesc(*this, desc))
+            return std::unexpected(Result::eInvalidParameter);
+
         return ICreateCommandBuffer(desc);
     }
 
-    GraphicsPipeline *Device::CreateGraphicsPipeline(const GraphicsPipelineDesc &desc) noexcept {
-        // TODO: check if desc is valid
+    ResultOr<GraphicsPipeline *> Device::CreateGraphicsPipeline(const GraphicsPipelineDesc &desc) noexcept {
+        if (!CheckDesc(*this, desc))
+            return std::unexpected(Result::eInvalidParameter);
+
         return ICreateGraphicsPipeline(desc);
     }
 
-    ComputePipeline *Device::CreateComputePipeline(const ComputePipelineDesc &desc) noexcept {
-        // TODO: check if desc is valid
+    ResultOr<ComputePipeline *> Device::CreateComputePipeline(const ComputePipelineDesc &desc) noexcept {
+        if (!CheckDesc(*this, desc))
+            return std::unexpected(Result::eInvalidParameter);
+
         return ICreateComputePipeline(desc);
     }
 
-    Semaphore *Device::CreateSemaphore(const SemaphoreDesc &desc) noexcept {
-        // TODO: check if desc is valid
+    ResultOr<Semaphore *> Device::CreateSemaphore(const SemaphoreDesc &desc) noexcept {
+        if (!CheckDesc(*this, desc))
+            return std::unexpected(Result::eInvalidParameter);
+
         return ICreateSemaphore(desc);
     }
 
-    Swapchain *Device::CreateSwapchain(const SwapchainDesc &desc) noexcept {
-        // TODO: check if desc is valid
+    ResultOr<Swapchain *> Device::CreateSwapchain(const SwapchainDesc &desc) noexcept {
+        if (!CheckDesc(*this, desc))
+            return std::unexpected(Result::eInvalidParameter);
+
         return ICreateSwapchain(desc);
     }
 
-    Shader *Device::CreateShader(const ShaderDesc &desc) noexcept {
-        // TODO: check if desc is valid
+    ResultOr<Shader *> Device::CreateShader(const ShaderDesc &desc) noexcept {
+        if (!CheckDesc(*this, desc))
+            return std::unexpected(Result::eInvalidParameter);
+
         return ICreateShader(m_shader_compiler->GetEntryPointBinary(desc.file, desc.entry_point));
     }
 
-    void Device::SetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept {
-        // TODO: check if desc is valid
+    Result Device::SetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept {
+        if (m_settings.resource_count <= index) {
+            return Result::eInvalidParameter;
+        }
 
-        ISetUniformBufferBindlessIndex(index, buffer, subresource);
+        if (!buffer.GetDesc().flags.Has(BufferFlagBit::eUniform)) {
+            return Result::eInvalidParameter;
+        }
+
+        BufferSubresource subres(subresource);
+        if (CheckBufferSubresource(*this, buffer, subres)) {
+            
+        }
+
+        return ISetUniformBufferBindlessIndex(index, buffer, subres);
     }
 
-    void Device::SetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
-        // TODO: check if desc is valid
+    Result Device::SetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
+        if (m_settings.resource_count <= index) {
+            return Result::eInvalidParameter;
+        }
 
-        ISetSampledImageBindlessIndex(index, image, subresource);
+        if (!image.GetDesc().flags.Has(ImageFlagBit::eSampled)) {
+            return Result::eInvalidParameter;
+        }
+
+        ImageSubresource subres(subresource);
+        if (!CheckImageSubresource(*this, image, subres)) {
+            return Result::eInvalidParameter;
+        }
+
+        return ISetSampledImageBindlessIndex(index, image, subres);
     }
 
-    void Device::SetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
-        // TODO: check if desc is valid
+    Result Device::SetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
+        if (m_settings.resource_count <= index) {
+            return Result::eInvalidParameter;
+        }
 
-        ISetStorageImageBindlessIndex(index, image, subresource);
+        if (!image.GetDesc().flags.Has(ImageFlagBit::eStorage)) {
+            return Result::eInvalidParameter;
+        }
+
+        ImageSubresource subres(subresource);
+        if (!CheckImageSubresource(*this, image, subres)) {
+            return Result::eInvalidParameter;
+        }
+
+        return ISetStorageImageBindlessIndex(index, image, subresource);
     }
 
-    void Device::SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept {
-        // TODO: check if desc is valid
+    Result Device::SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept {
+        if (m_settings.sampler_count <= index) {
+            return Result::eInvalidParameter;
+        }
 
-        ISetSamplerBindlessIndex(index, sampler);
+        return ISetSamplerBindlessIndex(index, sampler);
     }
 
-    void Device::SubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept {
-        // TODO: check if desc is valid
-        ISubmitCommandBuffer(desc);
-    }
-
-    void Device::WaitSemaphore(const WaitSemaphoreDesc &desc) noexcept {
-        // TODO: check if parameters is valid
+    Result Device::SubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept {
+        QueueType queue_type{};
         
-        IWaitSemaphore(desc);
+        if (desc.command_buffers.size() > 0) {
+            queue_type = desc.command_buffers[0]->GetDesc().queue_type;
+        }
+
+        for (const auto *command_buffer : desc.command_buffers) {
+            if (!command_buffer) {
+                return Result::eInvalidParameter;
+            }
+
+            if (command_buffer->GetDesc().queue_type != queue_type) {
+                return Result::eInvalidParameter;
+            }
+        }
+
+        for (const auto &wait_semaphore : desc.wait_semaphores) {
+            if (!wait_semaphore.semaphore) {
+                return Result::eInvalidParameter;
+            }
+        }
+
+        for (const auto &signal_semaphore : desc.signal_semaphores) {
+            if (!signal_semaphore.semaphore) {
+                return Result::eInvalidParameter;
+            }
+        }
+
+        return ISubmitCommandBuffer(desc);
     }
 
-    void Device::Present(const PresentDesc &desc) noexcept {
-        // TODO: check if parameters is valid
-        IPresent(desc);
+    Result Device::WaitSemaphore(const WaitSemaphoreDesc &desc) noexcept {
+        for (const auto &wait_semaphore : desc.semaphores) {
+            if (!wait_semaphore.semaphore) {
+                return Result::eInvalidParameter;
+            }
+        }
+        
+        return IWaitSemaphore(desc);
+    }
+
+    Result Device::Present(const PresentDesc &desc) noexcept {
+        if (!desc.swapchain) {
+            return Result::eInvalidParameter;
+        }
+
+        return IPresent(desc);
     }
 }

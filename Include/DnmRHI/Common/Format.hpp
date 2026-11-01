@@ -64,7 +64,6 @@ namespace DnmRHI {
         eBC6H_Ufloat,
         eBC7_Unorm,
         eBC7_Srgb,
-        eS8_Uint,
         eD32_Float,
         eD16_Unorm,
         eD16_Unorm_S8_Uint,

@@ -52,7 +52,7 @@ namespace DnmRHI::Vk {
                         .setDisplay(reinterpret_cast<wl_display *>(window.wayland_handle.display))
                 );
 #endif
-            default: assert(DnmRHI::WindowPlatform::eXLib != window.platform && "i forget xcb, probably your problem it is pls write"); std::unreachable();
+            default: assert(DnmRHI::WindowPlatform::eXLib != window.platform && "i forget xcb, probably your problem it is, pls write"); std::unreachable();
             }
         }
     }
@@ -78,7 +78,7 @@ namespace DnmRHI::Vk {
         if (m_surface) GetVkDevice.GetInstance().destroy(m_surface);
     }
 
-    void Swapchain::IReCreate(const SwapchainSettings &settings) noexcept {
+    Result Swapchain::IReCreate(const SwapchainSettings &settings) noexcept {
         m_desc.settings = settings;
 
 		const auto get_desired = [] (auto &&desired_list, auto &&search_list, auto not_find_value) noexcept -> auto {
@@ -356,9 +356,11 @@ namespace DnmRHI::Vk {
                 device.destroy(semaphore);
             }
         }
+
+        return Result::eSuccess;
     }
 
-    u32 Swapchain::IAcquireNextImage() noexcept {
+    ResultOr<u32> Swapchain::IAcquireNextImage() noexcept {
         const auto vk_image_index = 
             GetVkDevice.GetDevice().acquireNextImageKHR(m_swapchain, UINT64_MAX, 
                 m_image_acquire_semaphores[m_frame_index], nullptr).value;

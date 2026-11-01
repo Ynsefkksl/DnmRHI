@@ -17,11 +17,12 @@ namespace DnmRHI::Vk {
         if (!desc.name.empty()) SET_DEBUG_NAME_VK_OBJECT(GetVkDevice.GetDevice(), m_semaphore, desc.name.data());
     }
 
-    u64 Semaphore::IGetValue() noexcept {
+    ResultOr<u64> Semaphore::IGetValue() noexcept {
         return GetVkDevice.GetDevice().getSemaphoreCounterValue(m_semaphore);
     }
 
-    void Semaphore::ISignal(u64 value) noexcept {
+    Result Semaphore::ISignal(u64 value) noexcept {
         GetVkDevice.GetDevice().signalSemaphore({m_semaphore, value});
+        return Result::eSuccess;
     }
 };

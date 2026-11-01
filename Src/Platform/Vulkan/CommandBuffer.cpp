@@ -73,7 +73,7 @@ namespace DnmRHI::Vk {
         if (!desc.name.empty()) SET_DEBUG_NAME_VK_OBJECT(GetVkDevice.GetDevice(), m_command_buffer, std::format("{} (command buffer)", m_desc.name).c_str());
     }
 
-    void CommandBuffer::IBegin(bool one_time_submit) noexcept {
+    Result CommandBuffer::IBegin(bool one_time_submit) noexcept {
         m_command_buffer.begin(
             vk::CommandBufferBeginInfo{}
                 .setFlags(one_time_submit ? vk::CommandBufferUsageFlagBits::eOneTimeSubmit : vk::CommandBufferUsageFlagBits{})
@@ -97,9 +97,10 @@ namespace DnmRHI::Vk {
 
         GetVkDevice.GetDescriptorManager()->BindCommandBuffer(m_command_buffer);
         m_used_swapchain_images.clear();
+        return Result::eSuccess;
     }
 
-    void CommandBuffer::IEnd() noexcept {
+    Result CommandBuffer::IEnd() noexcept {
         std::vector<ImageBarrierDesc> image_barriers;
         image_barriers.reserve(m_image_layouts.size() * 2);
         for (const auto &[image, layouts] : m_image_layouts) {
@@ -131,14 +132,17 @@ namespace DnmRHI::Vk {
         InternalBarrier({}, image_barriers);
         m_command_buffer.end();
         m_image_layouts.clear();
+
+        return Result::eSuccess;
     }
 
-    void CommandBuffer::IReset() noexcept {
+    Result CommandBuffer::IReset() noexcept {
         GetVkDevice.GetDevice().resetCommandPool(m_command_pool);
+        return Result::eSuccess;
     }
 
     // General Queue Commands
-    void CommandBuffer::IBeginRenderPass(const RenderPassDesc &desc) noexcept {
+    Result CommandBuffer::IBeginRenderPass(const RenderPassDesc &desc) noexcept {
         const auto read_only_depth = desc.flags.Has(RenderPassFlagBit::eReadOnlyDepth);
         const auto read_only_stencil = desc.flags.Has(RenderPassFlagBit::eReadOnlyStencil);
 
@@ -385,9 +389,10 @@ namespace DnmRHI::Vk {
                 &stencil_attachment
             }
         );
+        return Result::eSuccess;
     }
 
-    void CommandBuffer::ISetViewport(std::span<const Viewport> viewport) noexcept {
+    Result CommandBuffer::ISetViewport(std::span<const Viewport> viewport) noexcept {
         std::vector<vk::Viewport> vk_viewports;
         vk_viewports.reserve(viewport.size());
         for (const auto &viewport : viewport)
@@ -401,8 +406,9 @@ namespace DnmRHI::Vk {
             );
 
         m_command_buffer.setViewport(0, vk_viewports);
+        return Result::eSuccess;
     }
-    void CommandBuffer::ISetScissor(std::span<const Scissor> scissor) noexcept {
+    Result CommandBuffer::ISetScissor(std::span<const Scissor> scissor) noexcept {
         std::vector<vk::Rect2D> vk_scissors;
         vk_scissors.reserve(scissor.size());
         for (const auto &scissor : scissor)
@@ -412,21 +418,24 @@ namespace DnmRHI::Vk {
             });
 
         m_command_buffer.setScissor(0, vk_scissors);
+        return Result::eSuccess;
     }
-    void CommandBuffer::ISetStencilRef(u32 front, u32 back) noexcept {
+    Result CommandBuffer::ISetStencilRef(u32 front, u32 back) noexcept {
         m_command_buffer.setStencilReference(vk::StencilFaceFlagBits::eFront, front);
         m_command_buffer.setStencilReference(vk::StencilFaceFlagBits::eBack, back);
+        return Result::eSuccess;
     }
 
-    void CommandBuffer::IDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) noexcept {
+    Result CommandBuffer::IDraw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) noexcept {
         m_command_buffer.draw(
             vertex_count,
             instance_count,
             first_vertex,
             first_instance
         );
+        return Result::eSuccess;
     }
-    void CommandBuffer::IDrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) noexcept {
+    Result CommandBuffer::IDrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) noexcept {
         m_command_buffer.drawIndexed(
             index_count,
             instance_count,
@@ -434,8 +443,9 @@ namespace DnmRHI::Vk {
             vertex_offset,
             first_instance
         );
+        return Result::eSuccess;
     }
-    void CommandBuffer::IDrawIndirect(const DrawIndirectDesc &desc) noexcept {
+    Result CommandBuffer::IDrawIndirect(const DrawIndirectDesc &desc) noexcept {
         const auto indirect_buffer = static_cast<const Buffer *>(desc.indirect_buffer)->GetBuffer();
         if (desc.count_buffer == nullptr)
             m_command_buffer.drawIndirect(
@@ -452,8 +462,9 @@ namespace DnmRHI::Vk {
                 desc.max_draw_or_draw_count,
                 desc.command_stride
             );
+        return Result::eSuccess;
     }
-    void CommandBuffer::IDrawIndexedIndirect(const DrawIndirectDesc &desc) noexcept {
+    Result CommandBuffer::IDrawIndexedIndirect(const DrawIndirectDesc &desc) noexcept {
         const auto indirect_buffer = static_cast<const Buffer *>(desc.indirect_buffer)->GetBuffer();
         if (desc.count_buffer == nullptr)
             m_command_buffer.drawIndexedIndirect(
@@ -470,13 +481,15 @@ namespace DnmRHI::Vk {
                 desc.max_draw_or_draw_count,
                 desc.command_stride
             );
+        return Result::eSuccess;
     }
 
-    void CommandBuffer::IEndRenderPass() noexcept {
+    Result CommandBuffer::IEndRenderPass() noexcept {
         m_command_buffer.endRendering();
+        return Result::eSuccess;
     }
     
-    void CommandBuffer::IBlitImage(const BlitImageDesc &desc) noexcept {
+    Result CommandBuffer::IBlitImage(const BlitImageDesc &desc) noexcept {
         const auto *vk_src_image = static_cast<const Image *>(desc.src_image);
         const auto *vk_dst_image = static_cast<const Image *>(desc.dst_image);
         const auto src_subresource = To_Vk(desc.src_subresource);
@@ -550,25 +563,29 @@ namespace DnmRHI::Vk {
             blit,
             To_Vk(desc.filter)
         );
+        return Result::eSuccess;
     }
     // TODO:
-    void CommandBuffer::IResolveImage(const ResolveImageDesc &desc) noexcept {
+    Result CommandBuffer::IResolveImage(const ResolveImageDesc &desc) noexcept {
         assert(false && "vulkan IResolveImage not implamented");
+        return Result::eSuccess;
     }
     
-    void CommandBuffer::IBindIndexBuffer(DnmRHI::Buffer &buffer, u64 offset, IndexType index_type) noexcept {
+    Result CommandBuffer::IBindIndexBuffer(DnmRHI::Buffer &buffer, u64 offset, IndexType index_type) noexcept {
         m_command_buffer.bindIndexBuffer(   
             static_cast<const Buffer &>(buffer).GetBuffer(),
             offset,
             To_Vk(index_type)
         );
+        return Result::eSuccess;
     }
-    void CommandBuffer::IBindPipeline(DnmRHI::GraphicsPipeline &pipeline) noexcept {
+    Result CommandBuffer::IBindPipeline(DnmRHI::GraphicsPipeline &pipeline) noexcept {
         m_command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, static_cast<const Vk::GraphicsPipeline &>(pipeline).GetPipeline());
+        return Result::eSuccess;
     }
-    void CommandBuffer::IPrepareForPresent(AccessFlags before_access, DnmRHI::Image &swapchain_image) noexcept {
+    Result CommandBuffer::IPrepareForPresent(AccessFlags before_access, DnmRHI::Image &swapchain_image) noexcept {
         const auto *vk_image_ptr = static_cast<const Vk::Image *>(&swapchain_image);
-        if (!m_image_layouts.contains(vk_image_ptr)) return;
+        if (!m_image_layouts.contains(vk_image_ptr)) return Result::eSuccess;
 
         const ImageBarrierDesc barrier_desc {
                 To_Vk(before_access),
@@ -581,44 +598,51 @@ namespace DnmRHI::Vk {
 
         InternalBarrier({}, {&barrier_desc, 1});
         m_used_swapchain_images.emplace_back(vk_image_ptr->GetSwapchain(), vk_image_ptr->GetSwapchainImageIndex());
+        return Result::eSuccess;
     }
     // General Queue Commands
     
     // Compute Queue Commands
-    void CommandBuffer::IDispatch(u32 x, u32 y, u32 z) noexcept {
+    Result CommandBuffer::IDispatch(u32 x, u32 y, u32 z) noexcept {
         m_command_buffer.dispatch(
             x, y, z
         );
+        return Result::eSuccess;
     }
-    void CommandBuffer::IDispatchIndirect(DnmRHI::Buffer &buffer, u32 offset) noexcept {
+    Result CommandBuffer::IDispatchIndirect(DnmRHI::Buffer &buffer, u32 offset) noexcept {
         m_command_buffer.dispatchIndirect(
             static_cast<const Buffer &>(buffer).GetBuffer(),
             offset
         );
+        return Result::eSuccess;
     }
 
-    void CommandBuffer::IBeginConditionalRendering(DnmRHI::Buffer &buffer, u32 offset, bool is_inverted) noexcept {
+    Result CommandBuffer::IBeginConditionalRendering(DnmRHI::Buffer &buffer, u32 offset, bool is_inverted) noexcept {
         m_command_buffer.beginConditionalRenderingEXT(
             vk::ConditionalRenderingBeginInfoEXT{}
                 .setBuffer(static_cast<const Buffer &>(buffer).GetBuffer())
                 .setOffset(offset)
                 .setFlags(is_inverted ? vk::ConditionalRenderingFlagBitsEXT::eInverted : vk::ConditionalRenderingFlagBitsEXT{})
         );
+        return Result::eSuccess;
     }
-    void CommandBuffer::IEndConditionalRendering() noexcept {
+    Result CommandBuffer::IEndConditionalRendering() noexcept {
         m_command_buffer.endConditionalRenderingEXT();
+        return Result::eSuccess;
     }
 
-    void CommandBuffer::IPushConstant(const void *data, u32 size, u32 offset) noexcept {
+    Result CommandBuffer::IPushConstant(const void *data, u32 size, u32 offset) noexcept {
         GetVkDevice.GetDescriptorManager()->PushConstants(m_command_buffer, data, size, offset);
+        return Result::eSuccess;
     }
-    void CommandBuffer::IBindPipeline(DnmRHI::ComputePipeline &pipeline) noexcept {
+    Result CommandBuffer::IBindPipeline(DnmRHI::ComputePipeline &pipeline) noexcept {
         m_command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, static_cast<const Vk::ComputePipeline &>(pipeline).GetPipeline());
+        return Result::eSuccess;
     }
     // Compute Queue Commands
 
     // Copy Queue Commands
-    void CommandBuffer::ICopyBuffer(const BufferCopyDesc &desc) noexcept {
+    Result CommandBuffer::ICopyBuffer(const BufferCopyDesc &desc) noexcept {
         const auto copy_region
             = vk::BufferCopy{}
                 .setSize(desc.size)
@@ -630,8 +654,9 @@ namespace DnmRHI::Vk {
             static_cast<const Buffer *>(desc.dst_buffer)->GetBuffer(),
             copy_region
         );
+        return Result::eSuccess;
     }
-    void CommandBuffer::ICopyImage(const ImageCopyDesc &desc) noexcept {
+    Result CommandBuffer::ICopyImage(const ImageCopyDesc &desc) noexcept {
         const auto *vk_src_image = static_cast<const Image *>(desc.src_image);
         const auto *vk_dst_image = static_cast<const Image *>(desc.dst_image);
         const auto src_subresource = To_Vk(desc.src_subresource);
@@ -700,8 +725,9 @@ namespace DnmRHI::Vk {
             vk_dst_image->GetImage(), vk_dst_image->c_CopyDstImageLayout,
             copy
         );
+        return Result::eSuccess;
     }
-    void CommandBuffer::ICopyBufferToImage(const BufferImageCopyDesc &desc) noexcept {
+    Result CommandBuffer::ICopyBufferToImage(const BufferImageCopyDesc &desc) noexcept {
         const auto *vk_buffer = static_cast<const Buffer *>(desc.buffer);
         const auto *vk_image = static_cast<const Image *>(desc.image);
         const auto image_subresource = To_Vk(desc.subresource);
@@ -746,8 +772,9 @@ namespace DnmRHI::Vk {
             vk_image->GetImage(), vk_image->c_CopyDstImageLayout,
             copy
         );
+        return Result::eSuccess;
     }
-    void CommandBuffer::ICopyImageToBuffer(const BufferImageCopyDesc &desc) noexcept {
+    Result CommandBuffer::ICopyImageToBuffer(const BufferImageCopyDesc &desc) noexcept {
         const auto *vk_buffer = static_cast<const Buffer *>(desc.buffer);
         const auto *vk_image = static_cast<const Image *>(desc.image);
         const auto image_subresource = To_Vk(desc.subresource);
@@ -792,10 +819,11 @@ namespace DnmRHI::Vk {
             vk_buffer->GetBuffer(),
             copy
         );
+        return Result::eSuccess;
     }
     // Copy Queue Commands
 
-    void CommandBuffer::IBarrier(std::span<const BarrierDesc> barriers) noexcept {
+    Result CommandBuffer::IBarrier(std::span<const BarrierDesc> barriers) noexcept {
         std::vector<ImageBarrierDesc> image_barriers;
         std::vector<MemoryBarrierDesc> memory_barriers;
         image_barriers.reserve(barriers.size());
@@ -843,9 +871,10 @@ namespace DnmRHI::Vk {
         }
 
         InternalBarrier(memory_barriers, image_barriers);
+        return Result::eSuccess;
     }
 
-    void CommandBuffer::IInitImage(std::span<const InitImageDesc> descs) noexcept {
+    Result CommandBuffer::IInitImage(std::span<const InitImageDesc> descs) noexcept {
         std::vector<ImageBarrierDesc> image_barriers;
         image_barriers.reserve(descs.size());
         
@@ -866,9 +895,10 @@ namespace DnmRHI::Vk {
         }
 
         InternalBarrier({}, image_barriers);
+        return Result::eSuccess;
     }
 
-    void CommandBuffer::IBeginDebugMarker(std::string_view name, std::array<u8, 4> color) noexcept {
+    Result CommandBuffer::IBeginDebugMarker(std::string_view name, std::array<u8, 4> color) noexcept {
         m_command_buffer.beginDebugUtilsLabelEXT(
             vk::DebugUtilsLabelEXT{}
                 .setPLabelName(name.data())
@@ -878,9 +908,11 @@ namespace DnmRHI::Vk {
                     static_cast<float>(color[2]), 
                     static_cast<float>(color[3])})
         );
+        return Result::eSuccess;
     }
-    void CommandBuffer::IEndDebugMarker() noexcept {
+    Result CommandBuffer::IEndDebugMarker() noexcept {
         m_command_buffer.endDebugUtilsLabelEXT();
+        return Result::eSuccess;
     }
 
     void CommandBuffer::InternalBarrier(std::span<const MemoryBarrierDesc> memory_barriers, std::span<const ImageBarrierDesc> image_barriers) {

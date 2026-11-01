@@ -31,7 +31,7 @@
 #include <algorithm>
 #include <memory>
 #include <map>
-#include <DnmRHI/Platform/Vulkan/vulkan_profiles.h>
+#include <vulkan/vulkan_profiles.h>
 
 namespace detail {
 

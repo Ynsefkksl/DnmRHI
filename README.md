@@ -27,6 +27,8 @@ Not yet implemented:
 - Variable rate shading (VRS)
 - Mesh shaders
 - Dynamic library build
+- ImGui backend
+- FSR, DLSS, XeSS etc. entegration
 
 ## Known Gaps
 

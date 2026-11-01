@@ -68,25 +68,25 @@ namespace DnmRHI::Vk {
         explicit Device(const DeviceInfo &info, DeviceSettings device_settings, const VulkanSettings &settings) noexcept;
         ~Device() noexcept;
 
-        virtual void IInit() noexcept override;
+        virtual Result IInit() noexcept override;
 
-        [[nodiscard]] virtual DnmRHI::Buffer *ICreateBuffer(const BufferDesc &desc) noexcept override;
-        [[nodiscard]] virtual DnmRHI::Image *ICreateImage(const ImageDesc &desc) noexcept override;
-        [[nodiscard]] virtual DnmRHI::CommandBuffer *ICreateCommandBuffer(const CommandBufferDesc &desc) noexcept override;
-        [[nodiscard]] virtual DnmRHI::GraphicsPipeline *ICreateGraphicsPipeline(const GraphicsPipelineDesc &desc) noexcept override;
-        [[nodiscard]] virtual DnmRHI::ComputePipeline *ICreateComputePipeline(const ComputePipelineDesc &desc) noexcept override;
-        [[nodiscard]] virtual DnmRHI::Semaphore *ICreateSemaphore(const SemaphoreDesc &desc) noexcept override;
-        [[nodiscard]] virtual DnmRHI::Swapchain *ICreateSwapchain(const SwapchainDesc &desc) noexcept override;
-        [[nodiscard]] virtual DnmRHI::Shader *ICreateShader(const ShaderEntryPoint &entry_point) noexcept override;
+        [[nodiscard]] virtual ResultOr<DnmRHI::Buffer *> ICreateBuffer(const BufferDesc &desc) noexcept override;
+        [[nodiscard]] virtual ResultOr<DnmRHI::Image *> ICreateImage(const ImageDesc &desc) noexcept override;
+        [[nodiscard]] virtual ResultOr<DnmRHI::CommandBuffer *> ICreateCommandBuffer(const CommandBufferDesc &desc) noexcept override;
+        [[nodiscard]] virtual ResultOr<DnmRHI::GraphicsPipeline *> ICreateGraphicsPipeline(const GraphicsPipelineDesc &desc) noexcept override;
+        [[nodiscard]] virtual ResultOr<DnmRHI::ComputePipeline *> ICreateComputePipeline(const ComputePipelineDesc &desc) noexcept override;
+        [[nodiscard]] virtual ResultOr<DnmRHI::Semaphore *> ICreateSemaphore(const SemaphoreDesc &desc) noexcept override;
+        [[nodiscard]] virtual ResultOr<DnmRHI::Swapchain *> ICreateSwapchain(const SwapchainDesc &desc) noexcept override;
+        [[nodiscard]] virtual ResultOr<DnmRHI::Shader *> ICreateShader(const ShaderEntryPoint &entry_point) noexcept override;
 
-        virtual void ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept override;
-        virtual void ISetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept override;
-        virtual void ISetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept override;
-        virtual void ISetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept override;
+        virtual Result ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept override;
+        virtual Result ISetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept override;
+        virtual Result ISetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept override;
+        virtual Result ISetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept override;
 
-        virtual void ISubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept override;
-        virtual void IWaitSemaphore(const WaitSemaphoreDesc &desc) noexcept override;
-        virtual void IPresent(const PresentDesc &desc) noexcept override;
+        virtual Result ISubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept override;
+        virtual Result IWaitSemaphore(const WaitSemaphoreDesc &desc) noexcept override;
+        virtual Result IPresent(const PresentDesc &desc) noexcept override;
         [[nodiscard]] virtual slang::ISession *CreateCompilerSession(slang::IGlobalSession *global_session) noexcept override;
 
         [[nodiscard]] auto GetInstance() const noexcept { return m_instance; }

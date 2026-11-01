@@ -6,7 +6,7 @@
 #include <DnmRHI/Platform/Vulkan/CommandBuffer.hpp>
 #include <DnmRHI/Platform/Vulkan/Swapchain.hpp>
 #include <DnmRHI/Platform/Vulkan/Shader.hpp>
-#include <DnmRHI/Platform/Vulkan/vulkan_profiles.h>
+#include <vulkan/vulkan_profiles.h>
 
 #include <print>
 #include <set>
@@ -176,7 +176,7 @@ namespace DnmRHI {
         return physical_device.createDevice(device_create_info);
     }
 
-    [[nodiscard]] Device *CreateVulkanDevice(const DeviceInfo &device_info, DeviceSettings device_settings, const VulkanSettings &vk_settings) {
+    [[nodiscard]] ResultOr<Device *> CreateVulkanDevice(const DeviceInfo &device_info, DeviceSettings device_settings, const VulkanSettings &vk_settings) noexcept {
         return new Vk::Device(device_info, device_settings, vk_settings);
     }
 
@@ -329,7 +329,7 @@ namespace DnmRHI {
         return device_info_out;
     } 
 
-    std::vector<DeviceInfo> QuerySupportedVulkanDevices() {
+    std::vector<DeviceInfo> QuerySupportedVulkanDevices() noexcept {
         vk::detail::DynamicLoader dyn_loader;
         QueryDispatcher query_dispatcher(dyn_loader);
 
@@ -404,31 +404,6 @@ namespace DnmRHI {
 }
 
 namespace DnmRHI::Vk {
-    constexpr Sync GetSyncFromUsageFlags(ImageFlags flags) {
-        Sync sync{};
-        sync.access |= vk::AccessFlagBits2::eTransferRead;
-        sync.stage |= vk::PipelineStageFlagBits2::eTransfer;
-
-        if (flags.Has(DnmRHI::ImageFlagBit::eStorage)) {
-            sync.access |= vk::AccessFlagBits2::eShaderStorageWrite | vk::AccessFlagBits2::eShaderStorageRead;
-            sync.stage |= vk::PipelineStageFlagBits2::eAllGraphics;
-        }
-        if (flags.Has(DnmRHI::ImageFlagBit::eAttachment)) {
-            sync.access |= vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentRead;
-            sync.stage |= vk::PipelineStageFlagBits2::eColorAttachmentOutput;
-        }
-        if (flags.Has(DnmRHI::ImageFlagBit::eCopyDst)) {
-            sync.access |= vk::AccessFlagBits2::eTransferWrite;
-            sync.stage |= vk::PipelineStageFlagBits2::eTransfer;
-        }
-        if (flags.Has(DnmRHI::ImageFlagBit::eSampled)) {
-            sync.access |= vk::AccessFlagBits2::eShaderSampledRead;
-            sync.stage |= vk::PipelineStageFlagBits2::eAllGraphics;
-        }
-
-        return sync;
-    }
-
     static vk::Bool32 DebugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                 vk::DebugUtilsMessageTypeFlagsEXT message_types,
                                 const vk::DebugUtilsMessengerCallbackDataEXT *callback_data,
@@ -463,7 +438,7 @@ namespace DnmRHI::Vk {
         if (m_instance) m_instance.destroy();
     }
 
-    void Device::IInit() noexcept {
+    Result Device::IInit() noexcept {
         VULKAN_HPP_DEFAULT_DISPATCHER.init(m_dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr"));
         const auto vp_functions = CreateVpFunctions(m_dl);
 
@@ -471,6 +446,8 @@ namespace DnmRHI::Vk {
         CreateDevice(vp_functions);
         CreateVmaAllocator();
         CreateDescriptorManager();
+
+        return Result::eSuccess;
     }
 
     void Device::CreateInstance(const VpFunctions &vp_functions) noexcept {
@@ -755,12 +732,7 @@ namespace DnmRHI::Vk {
             }
         }
 
-        // Info("Vulkan General Queue Family Index: {}", m_general_queue_family_index);
-        // Info("Vulkan Compute Queue Family Index: {}", m_compute_queue_family_index);
-        // Info("Vulkan Copy Queue Family Index: {}", m_copy_queue_family_index);
-
         VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device);
-        // Info("Vulkan Device Func Loaded");
     }
 
     void Device::CreateVmaAllocator() noexcept {
@@ -792,48 +764,52 @@ namespace DnmRHI::Vk {
             : static_cast<DescriptorManager *>(new DescriptorManagerBuffer(*this));
     }
     
-    DnmRHI::Buffer *Device::ICreateBuffer(const BufferDesc &desc) noexcept {
+    ResultOr<DnmRHI::Buffer *> Device::ICreateBuffer(const BufferDesc &desc) noexcept {
         return new Buffer(*this, desc);
     }
-    DnmRHI::Image *Device::ICreateImage(const ImageDesc &desc) noexcept {
+    ResultOr<DnmRHI::Image *> Device::ICreateImage(const ImageDesc &desc) noexcept {
         return new Image(*this, desc);
     }
-    DnmRHI::CommandBuffer *Device::ICreateCommandBuffer(const CommandBufferDesc &desc) noexcept {
+    ResultOr<DnmRHI::CommandBuffer *> Device::ICreateCommandBuffer(const CommandBufferDesc &desc) noexcept {
         return new CommandBuffer(*this, desc);
     }
-    DnmRHI::GraphicsPipeline *Device::ICreateGraphicsPipeline(const GraphicsPipelineDesc &desc) noexcept {
+    ResultOr<DnmRHI::GraphicsPipeline *> Device::ICreateGraphicsPipeline(const GraphicsPipelineDesc &desc) noexcept {
         return new GraphicsPipeline(*this, desc);
     }
-    DnmRHI::ComputePipeline *Device::ICreateComputePipeline(const ComputePipelineDesc &desc) noexcept {
+    ResultOr<DnmRHI::ComputePipeline *> Device::ICreateComputePipeline(const ComputePipelineDesc &desc) noexcept {
         return new ComputePipeline(*this, desc);
     }
-    DnmRHI::Semaphore *Device::ICreateSemaphore(const SemaphoreDesc &desc) noexcept {
+    ResultOr<DnmRHI::Semaphore *> Device::ICreateSemaphore(const SemaphoreDesc &desc) noexcept {
         return new Semaphore(*this, desc);
     }
-    DnmRHI::Swapchain *Device::ICreateSwapchain(const SwapchainDesc &desc) noexcept {
+    ResultOr<DnmRHI::Swapchain *> Device::ICreateSwapchain(const SwapchainDesc &desc) noexcept {
         return new Swapchain(*this, desc);
     }
-    DnmRHI::Shader *Device::ICreateShader(const ShaderEntryPoint &entry_point) noexcept {
+    ResultOr<DnmRHI::Shader *> Device::ICreateShader(const ShaderEntryPoint &entry_point) noexcept {
         return new Shader(*this, entry_point);
     }
     
-    void Device::ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept {
+    Result Device::ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept {
         m_descriptor_manager->SetUniformBufferBindlessIndex(index, static_cast<Vk::Buffer &>(buffer), subresource);
+        return Result::eSuccess;
     }
 
-    void Device::ISetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
+    Result Device::ISetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
         m_descriptor_manager->SetSampledImageBindlessIndex(index, static_cast<Vk::Image &>(image), subresource);
+        return Result::eSuccess;
     }
 
-    void Device::ISetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
+    Result Device::ISetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
         m_descriptor_manager->SetStorageImageBindlessIndex(index, static_cast<Vk::Image &>(image), subresource);
+        return Result::eSuccess;
     }
 
-    void Device::ISetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept {
+    Result Device::ISetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept {
         m_descriptor_manager->SetSamplerBindlessIndex(index, sampler);
+        return Result::eSuccess;
     }
 
-    void Device::ISubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept {
+    Result Device::ISubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept {
         std::vector<vk::CommandBufferSubmitInfo> vk_command_buffers;
         std::vector<vk::SemaphoreSubmitInfo> vk_wait_semaphores;
         std::vector<vk::SemaphoreSubmitInfo> vk_signal_semaphores;
@@ -890,9 +866,11 @@ namespace DnmRHI::Vk {
                 m_copy_queue.submit2(submit_info); break;
             default: std::unreachable();
         }
+
+        return Result::eSuccess;
     }
 
-    void Device::IWaitSemaphore(const WaitSemaphoreDesc &desc) noexcept {
+    Result Device::IWaitSemaphore(const WaitSemaphoreDesc &desc) noexcept {
         std::vector<vk::Semaphore> semaphores{}; // (desc.semaphores.begin(), desc.semaphores.end());
         std::vector<u64> values{};
         semaphores.reserve(desc.semaphores.size());
@@ -903,15 +881,17 @@ namespace DnmRHI::Vk {
             values.emplace_back(semaphore.value);
         }
 
-        [[maybe_unused]] const auto _ = m_device.waitSemaphores(
+        [[maybe_unused]] const auto result = m_device.waitSemaphores(
             vk::SemaphoreWaitInfo{}
                 .setSemaphores(semaphores)
                 .setValues(values)
                 .setFlags(desc.any ? vk::SemaphoreWaitFlagBits::eAny : vk::SemaphoreWaitFlagBits{}),
             desc.timeout);
+        
+        return result == vk::Result::eTimeout ? Result::eTimeout : Result::eSuccess;
     }
 
-    void Device::IPresent(const PresentDesc &desc) noexcept {
+    Result Device::IPresent(const PresentDesc &desc) noexcept {
         auto &swapchain = reinterpret_cast<Vk::Swapchain &>(*desc.swapchain);
         const auto vk_image_index = swapchain.GetVkImageIndex();
         const auto vk_swapchain = swapchain.GetSwapchain();
@@ -925,8 +905,9 @@ namespace DnmRHI::Vk {
                 .setWaitSemaphores(cmd_finished_semaphore)
                 ;
 
-        {
-            [[maybe_unused]] const auto _ = m_general_queue.presentKHR(present_info);
-        }
+        // TODO: handle result
+        [[maybe_unused]] const auto result = m_general_queue.presentKHR(present_info);
+
+        return Result::eSuccess;
     }
 }

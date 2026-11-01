@@ -5,18 +5,25 @@
 
 namespace DnmRHI::Vk {
     GraphicsPipeline::GraphicsPipeline(Vk::Device &device, const GraphicsPipelineDesc &desc) : DnmRHI::GraphicsPipeline(device, desc) {
+        std::vector<vk::ShaderModuleCreateInfo> shader_modules;
         std::vector<vk::PipelineShaderStageCreateInfo> shader_stages;
         shader_stages.reserve(desc.shaders.size());
+        shader_modules.reserve(desc.shaders.size());
 
         for (const auto *shader : desc.shaders) {
-            const auto &vk_shader = static_cast<const Vk::Shader &>(*shader);
+            const auto shader_module 
+                = vk::ShaderModuleCreateInfo{}
+                    .setPCode(reinterpret_cast<const u32 *>(shader->GetEntryPointInfo().byte_codes.data()))
+                    .setCodeSize(shader->GetEntryPointInfo().byte_codes.size())
+                    ;
+
             shader_stages.emplace_back(
                 vk::PipelineShaderStageCreateFlags{},
-                To_Vk(vk_shader.GetEntryPointInfo().flag_bit), 
-                vk_shader.GetModule(), 
-                GetVkDevice.GetVulkanSettings().generate_spirv_code_via_glsl ? "main" : vk_shader.GetEntryPointInfo().name.c_str(), 
+                To_Vk(shader->GetEntryPointInfo().flag_bit), 
+                VK_NULL_HANDLE,
+                GetVkDevice.GetVulkanSettings().generate_spirv_code_via_glsl ? "main" : shader->GetEntryPointInfo().name.c_str(), 
                 nullptr, 
-                nullptr);
+                &shader_module);
         }
 
         std::vector<vk::PipelineColorBlendAttachmentState> attachments;
@@ -116,8 +123,8 @@ namespace DnmRHI::Vk {
         const auto rendering_info
             = vk::PipelineRenderingCreateInfo{}
                 .setColorAttachmentFormats(attachments_formats)
-                .setDepthAttachmentFormat(To_Vk(desc.depth_stencil_state.depth_attachment))
-                .setStencilAttachmentFormat(To_Vk(desc.depth_stencil_state.stencil_attachment))
+                .setDepthAttachmentFormat(To_Vk(desc.depth_stencil_state.attachment_format))
+                .setStencilAttachmentFormat(To_Vk(desc.depth_stencil_state.attachment_format))
                 .setPNext(&create_flags_2)
                 ;
 

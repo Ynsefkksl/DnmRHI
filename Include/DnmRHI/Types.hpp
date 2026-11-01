@@ -1,6 +1,7 @@
 #pragma once
 
 #include <DnmRHI/Defines.hpp>
+#include <expected>
 #include <stdfloat>
 #include <type_traits>
 
@@ -39,6 +40,22 @@ namespace DnmRHI {
 	#endif
 	
 	using fp = f32;
+
+    enum class Result : i8 {
+        eSuccess = 0,
+        eTimeout = 1,
+        eCompileError = -1,
+        eUnsupportedFeature = -2,
+        eInvalidParameter = -3,
+        eInvalidUsage = -4,
+        eOutOfSystemMemory = -5,
+        eOutOfDeviceMemory = -6,
+        eDeviceLost = -7,
+        eUnknown = -8
+    };
+
+    template <typename T>
+    using ResultOr = std::expected<T, Result>;
 
 	class Device;
     class Image;
@@ -159,8 +176,7 @@ namespace DnmRHI {
             switch (type) {
                 case ObjectType::eBuffer: return ResourceType::eBuffer;
                 case ObjectType::eImage: return ResourceType::eImage;
-				//TODO:
-                default: return ResourceType::eBuffer; 
+                default: std::unreachable();
             }
         }
     public:

@@ -77,6 +77,7 @@ namespace DnmRHI {
         VSync vsync;
         ColorSpace color_space;
         ImageFlags image_flags;
+        // TODO: maybe it not be a good idea to add a flag for triple buffering
         b8 triple_buffering; // false is double buffering, some drivers requires triple buffers in this situation false value override as triple buffers
     
         constexpr auto &SetVSync(VSync vsync) noexcept { this->vsync = vsync; return *this; }

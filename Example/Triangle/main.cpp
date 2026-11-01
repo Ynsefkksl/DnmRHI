@@ -13,8 +13,9 @@ int main() {
                 .SetDescValidation(true)
                 .SetValidationLayer(true),
             DnmRHI::VulkanSettings{}
-        );
+        ).value();
         device->Init();
+        std::shared_ptr<DnmRHI::Image> image;
         delete device;
     }
 }

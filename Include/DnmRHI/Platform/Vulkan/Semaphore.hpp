@@ -12,8 +12,8 @@ namespace DnmRHI::Vk {
             GetVkDevice.GetDevice().destroy(m_semaphore);
         }
 
-        [[nodiscard]] virtual u64 IGetValue() noexcept override;
-        virtual void ISignal(u64 value) noexcept override;
+        [[nodiscard]] virtual ResultOr<u64> IGetValue() noexcept override;
+        virtual Result ISignal(u64 value) noexcept override;
 
         [[nodiscard]] auto GetSemaphore() const noexcept { return m_semaphore; }
     private:

@@ -33,6 +33,9 @@ namespace DnmRHI {
         constexpr bool Has(T bit) const noexcept {
             return (value & static_cast<Type>(bit)) != 0;
         }
+        constexpr bool Has(Flags o) const noexcept {
+            return (value & o.value) != 0;
+        }
 
         constexpr explicit operator Type() const noexcept { return value; }
         constexpr explicit operator bool() const noexcept { return Any(); }
