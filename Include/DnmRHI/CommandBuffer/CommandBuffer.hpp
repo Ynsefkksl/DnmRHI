@@ -28,105 +28,66 @@ namespace DnmRHI {
         eStore,
     };
 
-    enum class AccessFlagBit : u64 {
-        eCopyRead                       = 1ull << 0,
-        eCopyWrite                      = 1ull << 1,
-        eBlitRead                       = 1ull << 2,
-        eBlitWrite                      = 1ull << 3,
-        eResolveRead                    = 1ull << 4,
-        eResolveWrite                   = 1ull << 5,
-        eVertexRead                     = 1ull << 6,
-        eIndexRead                      = 1ull << 7,
-        eIndirectRead                   = 1ull << 8,
-        eColorAttachmentWrite           = 1ull << 9,
-        eColorAttachmentRead            = 1ull << 10,
-        eEarlyFragmentWrite             = 1ull << 11,
-        eEarlyFragmentRead              = 1ull << 12,
-        eLateFragmentWrite              = 1ull << 13,
-        eLateFragmentRead               = 1ull << 14,
-        eVariableRateShadingRead        = 1ull << 15,
-        eConditionalRenderingRead       = 1ull << 16,
-        eShaderBindingTableRead         = 1ull << 17,
-        eAccelerationStructureBuildRead = 1ull << 18,
-        eAccelerationStructureBuildWrite= 1ull << 19,
-        eAccelerationStructureCopyRead  = 1ull << 20,
-        eAccelerationStructureCopyWrite = 1ull << 21,
+    enum class PipelineFlagBit : u32 {
+        eCopy = 1 << 0,
+        eBlit = 1 << 1,
+        eResolve = 1 << 2,
+        eIndexInput = 1 << 3,
+        eIndirect = 1 << 4,
+        eColorAttachmentOutput = 1 << 5,
+        eEarlyFragmentTests = 1 << 6,
+        eLateFragmentTests = 1 << 7,
+        eConditionalRendering = 1 << 8,
+        eVertexShader = 1 << 9,
+        eFragmentShader = 1 << 10,
+        eComputeShader = 1 << 11,
+        eTaskShader = 1 << 12,
+        eMeshShader = 1 << 13,
+        eRayTracingShader = 1 << 14,
+        eVariableRateShading = 1 << 15,
+        eAccelerationStructureBuild = 1 << 16,
+        eAccelerationStructureCopy = 1 << 17
+    };
+    using PipelineFlags = Flags<PipelineFlagBit>;
 
-        // Vertex shader
-        eStorageWriteVertexShader               = 1ull << 22,
-        eStorageReadVertexShader                = 1ull << 23,
-        eSampledReadVertexShader                = 1ull << 24,
-        eUniformReadVertexShader                = 1ull << 25,
-        eAccelerationStructureReadVertexShader  = 1ull << 26,
+    enum class AccessFlagBit : u32 {
+        eTransferRead = 1 << 0,
+        eTransferWrite = 1 << 1,
+        eIndexRead = 1 << 2,
+        eIndirectRead = 1 << 3,
+        eColorAttachmentWrite = 1 << 4,
+        eColorAttachmentRead = 1 << 5,
+        eDepthStencilWrite = 1 << 6,
+        eDepthStencilRead = 1 << 7,
+        eUniformRead = 1 << 8,
+        eSampledRead = 1 << 9,
+        eStorageRead = 1 << 10,
+        eStorageWrite = 1 << 11,
+        eAccelerationStructureRead = 1 << 12,
+        eAccelerationStructureWrite = 1 << 13,
+        eShaderBindingTableRead = 1 << 14,
+        eVariableRateShadingRead = 1 << 15,
 
-        // Fragment shader
-        eStorageWriteFragmentShader             = 1ull << 27,
-        eStorageReadFragmentShader              = 1ull << 28,
-        eSampledReadFragmentShader              = 1ull << 29,
-        eUniformReadFragmentShader              = 1ull << 30,
-        eAccelerationStructureReadFragmentShader= 1ull << 31,
-
-        // Compute shader
-        eStorageWriteComputeShader              = 1ull << 32,
-        eStorageReadComputeShader               = 1ull << 33,
-        eSampledReadComputeShader               = 1ull << 34,
-        eUniformReadComputeShader               = 1ull << 35,
-        eAccelerationStructureReadComputeShader = 1ull << 36,
-
-        // Task shader
-        eStorageWriteTaskShader                 = 1ull << 37,
-        eStorageReadTaskShader                  = 1ull << 38,
-        eSampledReadTaskShader                  = 1ull << 39,
-        eUniformReadTaskShader                  = 1ull << 40,
-        eAccelerationStructureReadTaskShader    = 1ull << 41,
-
-        // Mesh shader
-        eStorageWriteMeshShader                 = 1ull << 42,
-        eStorageReadMeshShader                  = 1ull << 43,
-        eSampledReadMeshShader                  = 1ull << 44,
-        eUniformReadMeshShader                  = 1ull << 45,
-        eAccelerationStructureReadMeshShader    = 1ull << 46,
-
-        // Ray tracing shaders
-        eStorageWriteRayTracingShaders          = 1ull << 47,
-        eStorageReadRayTracingShaders           = 1ull << 48,
-        eSampledReadRayTracingShaders           = 1ull << 49,
-        eUniformReadRayTracingShaders           = 1ull << 50,
-        eAccelerationStructureReadRayTracingShaders = 1ull << 51,
-
-        eDepthStencilAttachmentWrite = eEarlyFragmentWrite | eLateFragmentWrite,
-        eDepthStencilAttachmentRead  = eEarlyFragmentRead  | eLateFragmentRead,
-
-        eStorageWriteAllStages =
-            eStorageWriteVertexShader | eStorageWriteFragmentShader | eStorageWriteComputeShader |
-            eStorageWriteTaskShader | eStorageWriteMeshShader | eStorageWriteRayTracingShaders,
-        eStorageReadAllStages =
-            eStorageReadVertexShader | eStorageReadFragmentShader | eStorageReadComputeShader |
-            eStorageReadTaskShader | eStorageReadMeshShader | eStorageReadRayTracingShaders,
-        eSampledReadAllStages =
-            eSampledReadVertexShader | eSampledReadFragmentShader | eSampledReadComputeShader |
-            eSampledReadTaskShader | eSampledReadMeshShader | eSampledReadRayTracingShaders,
-        eUniformReadAllStages =
-            eUniformReadVertexShader | eUniformReadFragmentShader | eUniformReadComputeShader |
-            eUniformReadTaskShader | eUniformReadMeshShader | eUniformReadRayTracingShaders,
-        eAccelerationStructureReadAllStages =
-            eAccelerationStructureReadVertexShader | eAccelerationStructureReadFragmentShader |
-            eAccelerationStructureReadComputeShader | eAccelerationStructureReadTaskShader |
-            eAccelerationStructureReadMeshShader | eAccelerationStructureReadRayTracingShaders,
-
-        eAllWrite =
-            eColorAttachmentWrite | eDepthStencilAttachmentWrite | eStorageWriteAllStages |
-            eBlitWrite | eResolveWrite | eCopyWrite |
-            eAccelerationStructureBuildWrite | eAccelerationStructureCopyWrite,
-        eAllRead =
-            eColorAttachmentRead | eDepthStencilAttachmentRead | eStorageReadAllStages |
-            eSampledReadAllStages | eUniformReadAllStages | eAccelerationStructureReadAllStages |
-            eBlitRead | eResolveRead | eCopyRead |
-            eVertexRead | eIndexRead | eIndirectRead |
-            eVariableRateShadingRead | eConditionalRenderingRead | eShaderBindingTableRead |
-            eAccelerationStructureBuildRead | eAccelerationStructureCopyRead,
+        eAllRead = eTransferRead | eIndexRead | eIndirectRead | eColorAttachmentRead | eDepthStencilRead | eUniformRead | eSampledRead | eStorageRead | eAccelerationStructureRead | eShaderBindingTableRead | eVariableRateShadingRead,
+        eAllWrite = eTransferWrite | eColorAttachmentWrite | eDepthStencilWrite | eStorageWrite | eAccelerationStructureWrite
     };
     using AccessFlags = Flags<AccessFlagBit>;
+
+    // TODO: name?
+    struct SyncInfo {
+        AccessFlags access{};
+        PipelineFlags stages{};
+
+        constexpr auto &SetAccess(AccessFlags access) noexcept { this->access = access; return *this; }
+        constexpr auto &SetStages(PipelineFlags stages) noexcept { this->stages = stages; return *this; }
+
+        SyncInfo operator|(const SyncInfo &other) const noexcept {
+            return {
+                access | other.access,
+                stages | other.stages
+            };
+        }
+    };
 
     enum class RenderPassFlagBit : u8 {
         eAllowStorageWrite = 1 << 0,
@@ -140,23 +101,23 @@ namespace DnmRHI {
     struct InitImageDesc {
         Image *image;
         // keep minimal
-        AccessFlags dst_access_flags;
+        SyncInfo access_flags;
 
         constexpr auto &SetImage(Image &image) noexcept { this->image = &image; return *this; }
-        constexpr auto &SetDstAccessFlags(AccessFlags access_flags) noexcept { this->dst_access_flags = access_flags; return *this; }
+        constexpr auto &SetSyncInfo(SyncInfo access_flags) noexcept { this->access_flags = access_flags; return *this; }
     };
 
     struct BarrierDesc {
         Resource *resource;
         // in image subresource, subresource type is unnecessary
         Subresource subresource;
-        AccessFlags src_access;
-        AccessFlags dst_access;
+        SyncInfo src_access;
+        SyncInfo dst_access;
 
         constexpr auto &SetResource(Resource *resource) noexcept { this->resource = resource; return *this; }
         constexpr auto &SetSubresource(Subresource subresource) noexcept { this->subresource = subresource; return *this; }
-        constexpr auto &SetSrcAccess(AccessFlags access) noexcept { this->src_access = access; return *this; }
-        constexpr auto &SetDstAccess(AccessFlags access) noexcept { this->dst_access = access; return *this; }
+        constexpr auto &SetSrcSyncInfo(SyncInfo sync_info) noexcept { this->src_access = sync_info; return *this; }
+        constexpr auto &SetDstSyncInfo(SyncInfo sync_info) noexcept { this->dst_access = sync_info; return *this; }
     };
 
     struct ColorAttachment {
@@ -383,7 +344,7 @@ namespace DnmRHI {
         Result BindIndexBuffer(Buffer &buffer, u64 offset, IndexType index_type) noexcept;
         Result BindPipeline(GraphicsPipeline &pipeline) noexcept;
 
-        Result PrepareForPresent(AccessFlags before_access, Image &swapchain_image) noexcept;
+        Result PrepareForPresent(SyncInfo before_sync, Image &swapchain_image) noexcept;
 
         Result DispatchMesh(u32 x, u32 y, u32 z) noexcept;
         Result DispatchMeshIndirect(const DrawIndirectDesc &desc) noexcept;
@@ -453,7 +414,7 @@ namespace DnmRHI {
         
         virtual Result IBindIndexBuffer(DnmRHI::Buffer &buffer, u64 offset, IndexType index_type) noexcept = 0;
         virtual Result IBindPipeline(DnmRHI::GraphicsPipeline &pipeline) noexcept = 0;
-        virtual Result IPrepareForPresent(AccessFlags before_access, DnmRHI::Image &swapchain_image) noexcept = 0;
+        virtual Result IPrepareForPresent(SyncInfo before_sync, DnmRHI::Image &swapchain_image) noexcept = 0;
         // General Queue Commands
         
         // Compute Queue Commands
@@ -491,6 +452,10 @@ namespace DnmRHI {
         DnmRHI::GraphicsPipeline *m_bound_graphics_pipeline{};
     };
 }
+
+template <> struct DnmRHI::FlagTraits<DnmRHI::PipelineFlagBit> {
+    static constexpr b8 is_bitmask = true;
+};
 
 template <> struct DnmRHI::FlagTraits<DnmRHI::AccessFlagBit> {
     static constexpr b8 is_bitmask = true;

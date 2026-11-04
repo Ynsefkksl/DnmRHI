@@ -12,7 +12,7 @@ namespace DnmRHI::Vk {
         explicit CommandBuffer(Vk::Device &device, const CommandBufferDesc &desc) noexcept;
         virtual ~CommandBuffer() noexcept override {
             GetVkDevice.GetDevice().waitIdle();
-            GetVkDevice.GetDevice().destroy(m_command_pool);
+            GetVkDevice.GetDevice().destroy(m_command_pool, GetVkDevice.GetAllocationCallbacks());
         }
 
         virtual Result IBegin(bool one_time_submit) noexcept override;
@@ -38,7 +38,7 @@ namespace DnmRHI::Vk {
         
         virtual Result IBindIndexBuffer(DnmRHI::Buffer &buffer, u64 offset, IndexType index_type) noexcept override;
         virtual Result IBindPipeline(DnmRHI::GraphicsPipeline &pipeline) noexcept override;
-        virtual Result IPrepareForPresent(AccessFlags before_access, DnmRHI::Image &swapchain_image) noexcept override;
+        virtual Result IPrepareForPresent(SyncInfo before_sync, DnmRHI::Image &swapchain_image) noexcept override;
         // General Queue Commands
         
         // Compute Queue Commands

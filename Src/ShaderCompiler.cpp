@@ -39,7 +39,7 @@ namespace DnmRHI {
 
     ShaderCompiler::~ShaderCompiler() noexcept {}
 
-    ShaderFileData ShaderCompiler::CompileFile(std::filesystem::path shader_file) {
+    ResultOr<ShaderFileData> ShaderCompiler::CompileFile(std::filesystem::path shader_file) {
         auto name = shader_file.filename().string();
 
         Slang::ComPtr<slang::IModule> slang_module;
@@ -52,10 +52,13 @@ namespace DnmRHI {
                 shader_file.string().c_str(), 
                 file.c_str(), 
                 diagnostics_blob.writeRef());
-            if (!slang_module) return {}; // Critical("Failed to load module error: {}", 
-                // std::string_view{static_cast<const char *>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()});
             if (diagnostics_blob) {
-                // Error("{}", std::string_view{static_cast<const char *>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()});
+                // TODO: fix massage ids
+                m_device.Message(!slang_module ? MessageSeverity::eError : MessageSeverity::eWarning, MessageCatagory::eShaderCompiler, 
+                    MessageID{0}, std::string_view{static_cast<const char *>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()});
+                if (!slang_module) {
+                    return std::unexpected(Result::eCompileError);
+                }
             }
         }
 
@@ -77,10 +80,13 @@ namespace DnmRHI {
                 composed_program.writeRef(),
                 diagnostics_blob.writeRef());
 
-            if (!composed_program) return {};// Critical("Shader compose error: {}", 
-                // std::string_view{static_cast<const char *>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()});
             if (diagnostics_blob) {
-                return {}; // Error("{}", std::string_view{static_cast<const char *>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()});
+                // TODO: fix massage ids
+                m_device.Message(!composed_program ? MessageSeverity::eError : MessageSeverity::eWarning, MessageCatagory::eShaderCompiler, 
+                    MessageID{0}, std::string_view{static_cast<const char *>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()});
+                if (!composed_program) {
+                    return std::unexpected(Result::eCompileError);
+                }
             }
         }
 
@@ -91,13 +97,15 @@ namespace DnmRHI {
                 linked_program.writeRef(),
                 diagnostics_blob.writeRef());
 
-            if (!linked_program) return {}; // Critical("Linked program error: {}",
-                // std::string_view{static_cast<const char *>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()});
             if (diagnostics_blob) {
-                return {}; // Error("{}", std::string_view{static_cast<const char *>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()});
+                // TODO: fix massage ids
+                m_device.Message(!linked_program ? MessageSeverity::eError : MessageSeverity::eWarning, MessageCatagory::eShaderCompiler, 
+                    MessageID{0}, std::string_view{static_cast<const char *>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()});
+                if (!linked_program) {
+                    return std::unexpected(Result::eCompileError);
+                }
             }
         }
-
 
         ShaderFileData file_data;
         for (const auto i : Counter(linked_program->getLayout()->getEntryPointCount())) {
@@ -119,18 +127,26 @@ namespace DnmRHI {
         return file_data;
     }
 
-    const ShaderEntryPoint &ShaderCompiler::GetEntryPointBinary(std::string_view file, std::string_view entry_point) noexcept {
-        std::string file_str(file);
+    ResultOr<const ShaderEntryPoint *> ShaderCompiler::GetEntryPointBinary(std::string_view file, std::string_view entry_point) noexcept {
+        if (std::filesystem::exists(file))
+            return std::unexpected(Result::eFileNotFound);
+
+        const std::string file_str(file);
+
         auto [it, is_emplaced] = m_shader_file_data_cache.try_emplace(file_str, ShaderFileData{});
         if (is_emplaced) {
-            it->second = CompileFile(file);
+            auto result_or_data = CompileFile(file);
+            if (!result_or_data.has_value())
+                return std::unexpected(result_or_data.error());
+            it->second = result_or_data.value();
         }
+        
         const auto &file_data = it->second;
-        auto entry_point_str = std::string(entry_point);
+
+        const auto entry_point_str = std::string(entry_point);
         if (file_data.entry_points.contains(entry_point_str)) {
-            return file_data.entry_points.at(entry_point_str);
+            return &file_data.entry_points.at(entry_point_str);
         }
-        //! TODO: why there is unreachable
-        std::unreachable();
+        return std::unexpected(Result::eEntryPointNotFound);
     }
 }

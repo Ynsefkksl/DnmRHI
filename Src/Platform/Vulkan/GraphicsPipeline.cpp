@@ -141,7 +141,8 @@ namespace DnmRHI::Vk {
                     .setPRasterizationState(&rasterization_state_create_info)
                     .setPViewportState(&viewport_state_create_info)
                     .setPMultisampleState(&multisample_state_create_info)
-                    .setPNext(&rendering_info)
+                    .setPNext(&rendering_info),
+                GetVkDevice.GetAllocationCallbacks()
             ).value;
 
         if (!desc.name.empty()) SET_DEBUG_NAME_VK_OBJECT(GetVkDevice.GetDevice(), m_pipeline, desc.name.data());

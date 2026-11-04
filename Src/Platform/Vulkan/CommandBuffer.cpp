@@ -61,7 +61,7 @@ namespace DnmRHI::Vk {
         m_command_pool = GetVkDevice.GetDevice().createCommandPool(
             vk::CommandPoolCreateInfo(
                 vk::CommandPoolCreateFlagBits{}, 
-                GetVkDevice.GetQueueFamilyIndex(desc.queue_type)));
+                GetVkDevice.GetQueueFamilyIndex(desc.queue_type)), GetVkDevice.GetAllocationCallbacks());
 
         m_command_buffer = GetVkDevice.GetDevice().allocateCommandBuffers(
             vk::CommandBufferAllocateInfo(
@@ -583,12 +583,12 @@ namespace DnmRHI::Vk {
         m_command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, static_cast<const Vk::GraphicsPipeline &>(pipeline).GetPipeline());
         return Result::eSuccess;
     }
-    Result CommandBuffer::IPrepareForPresent(AccessFlags before_access, DnmRHI::Image &swapchain_image) noexcept {
+    Result CommandBuffer::IPrepareForPresent(SyncInfo before_sync, DnmRHI::Image &swapchain_image) noexcept {
         const auto *vk_image_ptr = static_cast<const Vk::Image *>(&swapchain_image);
         if (!m_image_layouts.contains(vk_image_ptr)) return Result::eSuccess;
 
         const ImageBarrierDesc barrier_desc {
-                To_Vk(before_access),
+                To_Vk(before_sync),
                 Sync{},
                 vk_image_ptr,
                 ImageSubresource{}.SetLayerCount(0).SetMipmapCount(0),
@@ -832,12 +832,12 @@ namespace DnmRHI::Vk {
         for (const auto barrier : barriers) {
             const auto *resource = barrier.resource;
 
-            if (barrier.src_access.None() && barrier.dst_access.None()) continue;
+            if (barrier.src_access.access.None() && barrier.dst_access.access.None()) continue;
 
-            const auto src_barrier_is_read_only = !b8(barrier.src_access & DnmRHI::AccessFlagBit::eAllWrite);
-            const auto src_barrier_is_write_only = !b8(barrier.src_access & DnmRHI::AccessFlagBit::eAllRead);
-            const auto dst_barrier_is_read_only = !b8(barrier.dst_access & DnmRHI::AccessFlagBit::eAllWrite);
-            const auto dst_barrier_is_write_only = !b8(barrier.dst_access & DnmRHI::AccessFlagBit::eAllRead);
+            const auto src_barrier_is_read_only = !b8(barrier.src_access.access & DnmRHI::AccessFlagBit::eAllWrite);
+            const auto src_barrier_is_write_only = !b8(barrier.src_access.access & DnmRHI::AccessFlagBit::eAllRead);
+            const auto dst_barrier_is_read_only = !b8(barrier.dst_access.access & DnmRHI::AccessFlagBit::eAllWrite);
+            const auto dst_barrier_is_write_only = !b8(barrier.dst_access.access & DnmRHI::AccessFlagBit::eAllRead);
 
             if (src_barrier_is_read_only && dst_barrier_is_read_only)
                 continue;
@@ -884,7 +884,7 @@ namespace DnmRHI::Vk {
 
             image_barriers.emplace_back(
                 Sync{},
-                To_Vk(desc.dst_access_flags),
+                To_Vk(desc.access_flags),
                 static_cast<Vk::Image *>(desc.image),
                 ImageSubresource{}.SetLayerCount(0).SetMipmapCount(0),
                 vk_image.c_IsSwapchainImage ? vk::ImageLayout::ePresentSrcKHR : vk::ImageLayout::eUndefined,

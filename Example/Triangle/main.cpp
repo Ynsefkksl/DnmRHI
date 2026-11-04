@@ -10,7 +10,7 @@ int main() {
         std::println("name device: {}", device_info.properties.name);
         auto *device = DnmRHI::CreateVulkanDevice(device_info, 
             DnmRHI::DeviceSettings{}
-                .SetDescValidation(true)
+                .SetShaderDebug(true)
                 .SetValidationLayer(true),
             DnmRHI::VulkanSettings{}
         ).value();

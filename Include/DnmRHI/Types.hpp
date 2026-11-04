@@ -51,7 +51,9 @@ namespace DnmRHI {
         eOutOfSystemMemory = -5,
         eOutOfDeviceMemory = -6,
         eDeviceLost = -7,
-        eUnknown = -8
+        eFileNotFound = -8,
+        eEntryPointNotFound = -8,
+        eUnknown = -9
     };
 
     template <typename T>

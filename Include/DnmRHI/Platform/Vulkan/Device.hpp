@@ -10,7 +10,7 @@
     vk::DebugUtilsObjectNameInfoEXT{object.objectType, reinterpret_cast<const uint64_t&>(object), debug_name});
 
 #define TO_C_PTR(vk_obj) reinterpret_cast<decltype(vk_obj)::NativeType *>(&vk_obj)
-#define TO_C_CONST_PTR(vk_obj) reinterpret_cast<const decltype(vk_obj)::NativeType *>(&vk_obj)
+#define TO_C_CONST_PTR(vk_obj) reinterpret_cast<const PureType<decltype(vk_obj)>::NativeType *>(&vk_obj)
 
 #define GetVkDevice (static_cast<::DnmRHI::Vk::Device &>(GetDevice()))
 #define GetVkDeviceProperties GetVkDevice.GetVulkanDeviceProperties()
@@ -93,6 +93,7 @@ namespace DnmRHI::Vk {
         [[nodiscard]] auto GetPhysicalDevice() const noexcept { return m_physical_device; }
         [[nodiscard]] auto GetDevice() const noexcept { return m_device; }
         [[nodiscard]] auto *GetAllocator() const noexcept { return m_vma_allocator; }
+        [[nodiscard]] auto *GetAllocationCallbacks() const noexcept { return m_vk_alloc_callbacks; }
 
         [[nodiscard]] auto GetGeneralQueue() const noexcept { return m_general_queue; }
         [[nodiscard]] auto GetComputeQueue() const noexcept { return m_compute_queue; }
@@ -155,6 +156,9 @@ namespace DnmRHI::Vk {
         VulkanSettings m_vk_settings;
         DeviceFeatures m_vk_device_features;
         DeviceProperties m_vk_device_properties;
+
+        vk::AllocationCallbacks *m_vk_alloc_callbacks;
+        VmaDeviceMemoryCallbacks *m_vma_device_alloc_callbacks;
 
         friend DnmRHI::Device *CreateVulkanDevice(const DeviceInfo &device_info, DeviceSettings device_settings, const VulkanSettings &vk_settings);
     };

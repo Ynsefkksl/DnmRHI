@@ -69,13 +69,13 @@ namespace DnmRHI::Vk {
             delete image;
 
         for (auto i : m_image_acquire_semaphores)
-            GetVkDevice.GetDevice().destroy(i);
+            GetVkDevice.GetDevice().destroy(i, GetVkDevice.GetAllocationCallbacks());
 
         for (auto i : m_image_available_semaphores)
-            GetVkDevice.GetDevice().destroy(i);
+            GetVkDevice.GetDevice().destroy(i, GetVkDevice.GetAllocationCallbacks());
 
-        if (m_swapchain) GetVkDevice.GetDevice().destroy(m_swapchain);
-        if (m_surface) GetVkDevice.GetInstance().destroy(m_surface);
+        if (m_swapchain) GetVkDevice.GetDevice().destroy(m_swapchain, GetVkDevice.GetAllocationCallbacks());
+        if (m_surface) GetVkDevice.GetInstance().destroy(m_surface, GetVkDevice.GetAllocationCallbacks());
     }
 
     Result Swapchain::IReCreate(const SwapchainSettings &settings) noexcept {
@@ -223,7 +223,7 @@ namespace DnmRHI::Vk {
                 .setOldSwapchain(m_swapchain)
                 ;
 
-        m_swapchain = GetVkDevice.GetDevice().createSwapchainKHR(create_info);
+        m_swapchain = GetVkDevice.GetDevice().createSwapchainKHR(create_info, GetVkDevice.GetAllocationCallbacks());
         if (!m_desc.name.empty()) SET_DEBUG_NAME_VK_OBJECT(GetVkDevice.GetDevice(), m_swapchain, m_desc.name.c_str());
 
         m_swapchain_images = GetVkDevice.GetDevice().getSwapchainImagesKHR(m_swapchain);
@@ -234,7 +234,7 @@ namespace DnmRHI::Vk {
 
         for (const auto i : Counter(m_image_count)) {
             const auto semaphore = m_image_available_semaphores.emplace_back(
-                GetVkDevice.GetDevice().createSemaphore({})
+                GetVkDevice.GetDevice().createSemaphore({}, GetVkDevice.GetAllocationCallbacks())
             );
 
             if (!m_desc.name.empty()) SET_DEBUG_NAME_VK_OBJECT(GetVkDevice.GetDevice(), semaphore, std::format("{} swapchain, {}. image available semaphore", m_desc.name, i).c_str());
@@ -253,7 +253,7 @@ namespace DnmRHI::Vk {
 
         for (const auto i : Counter(c_Frames_In_Flight_Count)) {
             const auto semaphore = m_image_acquire_semaphores.emplace_back(
-                GetVkDevice.GetDevice().createSemaphore({})
+                GetVkDevice.GetDevice().createSemaphore({}, GetVkDevice.GetAllocationCallbacks())
             );
 
             if (!m_desc.name.empty()) SET_DEBUG_NAME_VK_OBJECT(GetVkDevice.GetDevice(), semaphore, std::format("{} swapchain, {}. image acquire semaphore", m_desc.name, i).c_str());
@@ -262,20 +262,22 @@ namespace DnmRHI::Vk {
         // translate swapchain image layouts to present src, my image layout manager need it
         {
             const vk::Device device = GetVkDevice.GetDevice();
-            const auto queue        = GetVkDevice.GetGeneralQueue();
-            const auto image_count  = m_swapchain_images.size();
+            const auto queue = GetVkDevice.GetGeneralQueue();
+            const auto image_count = m_swapchain_images.size();
 
-            const auto acquire_semaphore = device.createSemaphore({});
+            const auto acquire_semaphore = device.createSemaphore({}, GetVkDevice.GetAllocationCallbacks());
 
             std::vector<vk::Semaphore> present_semaphores;
             present_semaphores.reserve(image_count);
             for (size_t i = 0; i < image_count; ++i) {
-                present_semaphores.push_back(device.createSemaphore({}));
+                present_semaphores.push_back(device.createSemaphore({}, GetVkDevice.GetAllocationCallbacks()));
             }
 
             const auto cmd_pool = device.createCommandPool(
                 vk::CommandPoolCreateInfo{}
-                    .setQueueFamilyIndex(GetVkDevice.GetGeneralQueueFamilyIndex()));
+                    .setQueueFamilyIndex(GetVkDevice.GetGeneralQueueFamilyIndex()),
+                    GetVkDevice.GetAllocationCallbacks()
+                );
 
             const auto cmd_buffer = device.allocateCommandBuffers(
                 vk::CommandBufferAllocateInfo{}
@@ -341,6 +343,7 @@ namespace DnmRHI::Vk {
                         .setWaitSemaphores(present_semaphores[image_index])
                         .setSwapchains(m_swapchain)
                         .setImageIndices(image_index);
+
                 std::ignore = queue.presentKHR(present_info);
 
                 if (!transitioned[image_index]) {
@@ -350,10 +353,10 @@ namespace DnmRHI::Vk {
             }
 
             device.waitIdle();
-            device.destroy(cmd_pool);
-            device.destroy(acquire_semaphore);
+            device.destroy(cmd_pool, GetVkDevice.GetAllocationCallbacks());
+            device.destroy(acquire_semaphore, GetVkDevice.GetAllocationCallbacks());
             for (const auto semaphore : present_semaphores) {
-                device.destroy(semaphore);
+                device.destroy(semaphore, GetVkDevice.GetAllocationCallbacks());
             }
         }
 

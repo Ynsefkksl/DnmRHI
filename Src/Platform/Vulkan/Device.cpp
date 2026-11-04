@@ -8,7 +8,6 @@
 #include <DnmRHI/Platform/Vulkan/Shader.hpp>
 #include <vulkan/vulkan_profiles.h>
 
-#include <print>
 #include <set>
 #include <vector>
 
@@ -17,9 +16,9 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 #define ADD_P_NEXT(struct_name) do {struct_name.pNext = p_next; \
 			                    p_next = &struct_name;} while(0)
 
-#define FEATURE_MUST_BE_SUPPORTED(feature) if (b8(feature) != true) { is_suitable = false; /* Warn("GPU is unsupported, must be support " #feature); */ }
-#define PROPERTY_MUST_BE_GTE(property, value) if (property < value) { is_suitable = false; /* Warn("GPU is unsupported, " #property " greater than " #value ", your value: {}", value); */ }
-#define PROPERTY_MUST_BE_SUPPORTED(property) if (b8(property) != true) { is_suitable = false; /* Warn("GPU is unsupported, must be support " #property " property"); */ }
+#define FEATURE_MUST_BE_SUPPORTED(feature) if (b8(feature) != true) { is_suitable = false; }
+#define PROPERTY_MUST_BE_GTE(property, value) if (property < value) { is_suitable = false; }
+#define PROPERTY_MUST_BE_SUPPORTED(property) if (b8(property) != true) { is_suitable = false; }
 
 // TODO:
 namespace DnmRHI {
@@ -64,7 +63,7 @@ namespace DnmRHI {
     }
 
     static vk::Device CreateDeviceManual(VpFunctions vp_funcs, vk::Instance instance, vk::PhysicalDevice physical_device, DeviceSettings device_settings, 
-        VulkanSettings vk_settings, std::span<const vk::DeviceQueueCreateInfo> queue_infos, Vk::DeviceFeatures &out_features) {
+        VulkanSettings vk_settings, std::span<const vk::DeviceQueueCreateInfo> queue_infos, Vk::DeviceFeatures &out_features, vk::AllocationCallbacks *allocation_callbacks) {
         vk::StructureChain<
             vk::PhysicalDeviceFeatures2,
             vk::PhysicalDeviceVulkan11Features,
@@ -173,7 +172,7 @@ namespace DnmRHI {
                 .setPEnabledExtensionNames(extension_names)
                 ;
 
-        return physical_device.createDevice(device_create_info);
+        return physical_device.createDevice(device_create_info, allocation_callbacks);
     }
 
     [[nodiscard]] ResultOr<Device *> CreateVulkanDevice(const DeviceInfo &device_info, DeviceSettings device_settings, const VulkanSettings &vk_settings) noexcept {
@@ -404,38 +403,48 @@ namespace DnmRHI {
 }
 
 namespace DnmRHI::Vk {
-    static vk::Bool32 DebugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT message_severity,
+    static VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                 vk::DebugUtilsMessageTypeFlagsEXT message_types,
                                 const vk::DebugUtilsMessengerCallbackDataEXT *callback_data,
                                 void *user_data) {
         constexpr auto unnecessary_messages = std::array{306759332, 2132353751, 2132353751, -2030147807, 601872502, 615892639, 1734198062};
         for (const i32 i : unnecessary_messages)
-            if (callback_data->messageIdNumber == i) return vk::True;
+            if (callback_data->messageIdNumber == i) return vk::False;
 
-        if (message_severity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) {
-            std::println("Vulkan Error; message id {}, message: {}", callback_data->messageIdNumber, callback_data->pMessage);
+        if (user_data) {
+            MessageSeverity severity{};
+
+            if (message_severity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
+                severity = MessageSeverity::eError;
+            else if (message_severity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning)
+                severity = MessageSeverity::eWarning;
+            else
+                severity = MessageSeverity::eInfo;
+
+            const auto &callback = *reinterpret_cast<DebugCallbackFn *>(user_data);
+            callback(severity, MessageCatagory::eGraphicsBackend, static_cast<MessageID>(callback_data->messageIdNumber), callback_data->pMessage);
         }
-        else if (message_severity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) {
-            std::println("Vulkan Warn; message id {}, message: {}", callback_data->messageIdNumber, callback_data->pMessage);
-        }
-        else {
-            std::println("Vulkan Info; message id {}, message: {}", callback_data->messageIdNumber, callback_data->pMessage);
-        }
-        return vk::True;
+        return vk::False;
     }
 
     Device::Device(const DeviceInfo &info, DeviceSettings device_settings, const VulkanSettings &settings) noexcept 
-    : DnmRHI::Device(info, device_settings), m_vk_settings(settings) {}
+    : DnmRHI::Device(info, device_settings), m_vk_settings(settings) {
+        m_vk_alloc_callbacks = new vk::AllocationCallbacks(*reinterpret_cast<vk::AllocationCallbacks *>(settings.allocation_callbacks));
+        m_vma_device_alloc_callbacks = new VmaDeviceMemoryCallbacks(*reinterpret_cast<VmaDeviceMemoryCallbacks *>(settings.vma_device_memory_callbacks));
+    }
 
     Device::~Device() noexcept {
         if (m_device) GetDevice().waitIdle();
 
         if (m_descriptor_manager) delete m_descriptor_manager;
         if (m_vma_allocator) vmaDestroyAllocator(m_vma_allocator);
-        if (m_debug_messenger) m_instance.destroy(m_debug_messenger);
-        if (m_device) m_device.destroy();
+        if (m_debug_messenger) m_instance.destroy(m_debug_messenger, GetAllocationCallbacks());
+        if (m_device) m_device.destroy(GetAllocationCallbacks());
 
-        if (m_instance) m_instance.destroy();
+        if (m_instance) m_instance.destroy(GetAllocationCallbacks());
+
+        delete m_vk_alloc_callbacks;
+        delete m_vma_device_alloc_callbacks;
     }
 
     Result Device::IInit() noexcept {
@@ -528,14 +537,15 @@ namespace DnmRHI::Vk {
                 .setMessageSeverity(
                 vk::DebugUtilsMessageSeverityFlagBitsEXT::eError
                                 | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
-                                //  | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo
-                                //  | vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose
                             )
                 .setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral
                                             | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation
                                             | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
                                         )
-                .setPfnUserCallback((vk::PFN_DebugUtilsMessengerCallbackEXT)DebugCallback)
+                .setPfnUserCallback(
+                    m_vk_settings.debug_callback_func ? (vk::PFN_DebugUtilsMessengerCallbackEXT)m_vk_settings.debug_callback_func 
+                        : (vk::PFN_DebugUtilsMessengerCallbackEXT)DebugCallback)
+                .setPUserData(&m_settings.debug_callback)
                 .setPNext(m_settings.validation_layer ? &validataion_features : nullptr)
                 ;
 
@@ -552,12 +562,12 @@ namespace DnmRHI::Vk {
         vp_instance_create_info.enabledProfileBlockCount = supported_blocks.size();
         vp_instance_create_info.pEnabledProfileBlocks = supported_blocks.data();
 
-        auto result = vpCreateInstance(vp_functions, &vp_instance_create_info, nullptr, reinterpret_cast<VkInstance *>(&m_instance));
+        auto result = vpCreateInstance(vp_functions, &vp_instance_create_info, TO_C_CONST_PTR(*GetAllocationCallbacks()), reinterpret_cast<VkInstance *>(&m_instance));
         if (result != VK_SUCCESS) return;
 
         VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance);
 
-        if (GetSettings().validation_layer) m_debug_messenger = m_instance.createDebugUtilsMessengerEXT(debug_create_info);    
+        if (GetSettings().validation_layer) m_debug_messenger = m_instance.createDebugUtilsMessengerEXT(debug_create_info, GetAllocationCallbacks());    
     }
 
     void Device::CreateDevice(const VpFunctions &vp_functions) noexcept {
@@ -686,7 +696,7 @@ namespace DnmRHI::Vk {
         if (compute_queue_create_info.queueCount) queues.push_back(compute_queue_create_info);
         if (copy_queue_create_info.queueCount) queues.push_back(copy_queue_create_info);
 
-        m_device = CreateDeviceManual(vp_functions, m_instance, m_physical_device, m_settings, m_vk_settings, queues, m_vk_device_features);
+        m_device = CreateDeviceManual(vp_functions, m_instance, m_physical_device, m_settings, m_vk_settings, queues, m_vk_device_features, GetAllocationCallbacks());
 
         m_general_queue = m_device.getQueue(m_general_queue_family_index, 0);
         m_compute_queue = compute_queue_create_info.queueCount ? m_device.getQueue(m_compute_queue_family_index, 0) : m_general_queue;
@@ -746,6 +756,8 @@ namespace DnmRHI::Vk {
         create_info.device = m_device;
         create_info.physicalDevice = m_physical_device;
         create_info.vulkanApiVersion = VK_API_VERSION_1_4;
+        create_info.pAllocationCallbacks = TO_C_CONST_PTR(*m_vk_alloc_callbacks);
+        create_info.pDeviceMemoryCallbacks = m_vma_device_alloc_callbacks;
         create_info.flags 
             = VMA_ALLOCATOR_CREATE_EXTERNALLY_SYNCHRONIZED_BIT 
             | VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT 
@@ -871,7 +883,7 @@ namespace DnmRHI::Vk {
     }
 
     Result Device::IWaitSemaphore(const WaitSemaphoreDesc &desc) noexcept {
-        std::vector<vk::Semaphore> semaphores{}; // (desc.semaphores.begin(), desc.semaphores.end());
+        std::vector<vk::Semaphore> semaphores{};
         std::vector<u64> values{};
         semaphores.reserve(desc.semaphores.size());
         values.reserve(desc.semaphores.size());

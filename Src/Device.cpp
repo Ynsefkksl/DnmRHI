@@ -275,32 +275,39 @@ namespace DnmRHI {
     }
 
     Result Device::Init() noexcept {
-        // is already initialized
-        if (m_shader_compiler)
-            return Result::eInvalidUsage;
+        if (GetSettings().debug_mode) {
+            // is already initialized
+            if (m_shader_compiler)
+                return Result::eInvalidUsage;
+        }
 
         m_shader_compiler = new ShaderCompiler(*this); 
         return IInit(); 
     }
 
     ResultOr<Buffer *> Device::CreateBuffer(const BufferDesc &desc) noexcept {
-        if (!CheckDesc(*this, desc))
-            return std::unexpected(Result::eInvalidParameter);
+        if (GetSettings().debug_mode) {
+            if (!CheckDesc(*this, desc))
+                return std::unexpected(Result::eInvalidParameter);
+        }
 
         return ICreateBuffer(desc);
     }
 
     ResultOr<Image *> Device::CreateImage(const ImageDesc &desc) noexcept {
-        if (!CheckDesc(*this, desc))
-            return std::unexpected(Result::eInvalidParameter);
+        if (GetSettings().debug_mode) {
+            if (!CheckDesc(*this, desc))
+                return std::unexpected(Result::eInvalidParameter);
+        }
 
         return ICreateImage(desc);
     }
 
     ResultOr<CommandBuffer *> Device::CreateCommandBuffer(const CommandBufferDesc &desc) noexcept {
-        if (!CheckDesc(*this, desc))
-            return std::unexpected(Result::eInvalidParameter);
-
+        if (GetSettings().debug_mode) {
+            if (!CheckDesc(*this, desc))
+                return std::unexpected(Result::eInvalidParameter);
+        }
         return ICreateCommandBuffer(desc);
     }
 
@@ -319,111 +326,133 @@ namespace DnmRHI {
     }
 
     ResultOr<Semaphore *> Device::CreateSemaphore(const SemaphoreDesc &desc) noexcept {
-        if (!CheckDesc(*this, desc))
-            return std::unexpected(Result::eInvalidParameter);
-
+        if (GetSettings().debug_mode) {
+            if (!CheckDesc(*this, desc))
+                return std::unexpected(Result::eInvalidParameter);
+        }
         return ICreateSemaphore(desc);
     }
 
     ResultOr<Swapchain *> Device::CreateSwapchain(const SwapchainDesc &desc) noexcept {
-        if (!CheckDesc(*this, desc))
-            return std::unexpected(Result::eInvalidParameter);
-
+        if (GetSettings().debug_mode) {
+            if (!CheckDesc(*this, desc))
+                return std::unexpected(Result::eInvalidParameter);
+        }
         return ICreateSwapchain(desc);
     }
 
     ResultOr<Shader *> Device::CreateShader(const ShaderDesc &desc) noexcept {
-        if (!CheckDesc(*this, desc))
-            return std::unexpected(Result::eInvalidParameter);
+        if (GetSettings().debug_mode) {
+            if (!CheckDesc(*this, desc))
+                return std::unexpected(Result::eInvalidParameter);
+        }
 
-        return ICreateShader(m_shader_compiler->GetEntryPointBinary(desc.file, desc.entry_point));
+        const auto result_or_entry_point = m_shader_compiler->GetEntryPointBinary(desc.file, desc.entry_point);
+
+        if (!result_or_entry_point.has_value()) {
+            return std::unexpected(result_or_entry_point.error());
+        }
+
+        return ICreateShader(*result_or_entry_point.value());
     }
 
     Result Device::SetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept {
-        if (m_settings.resource_count <= index) {
-            return Result::eInvalidParameter;
-        }
-
-        if (!buffer.GetDesc().flags.Has(BufferFlagBit::eUniform)) {
-            return Result::eInvalidParameter;
-        }
-
         BufferSubresource subres(subresource);
-        if (CheckBufferSubresource(*this, buffer, subres)) {
-            
+        
+        if (GetSettings().debug_mode) {
+            if (m_settings.resource_count <= index) {
+                return Result::eInvalidParameter;
+            }
+
+            if (!buffer.GetDesc().flags.Has(BufferFlagBit::eUniform)) {
+                return Result::eInvalidParameter;
+            }
+
+            if (CheckBufferSubresource(*this, buffer, subres)) {
+                return Result::eInvalidParameter;
+            }
         }
 
         return ISetUniformBufferBindlessIndex(index, buffer, subres);
     }
 
     Result Device::SetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
-        if (m_settings.resource_count <= index) {
-            return Result::eInvalidParameter;
-        }
-
-        if (!image.GetDesc().flags.Has(ImageFlagBit::eSampled)) {
-            return Result::eInvalidParameter;
-        }
-
         ImageSubresource subres(subresource);
-        if (!CheckImageSubresource(*this, image, subres)) {
-            return Result::eInvalidParameter;
+
+        if (GetSettings().debug_mode) {
+            if (m_settings.resource_count <= index) {
+                return Result::eInvalidParameter;
+            }
+    
+            if (!image.GetDesc().flags.Has(ImageFlagBit::eSampled)) {
+                return Result::eInvalidParameter;
+            }
+    
+            if (!CheckImageSubresource(*this, image, subres)) {
+                return Result::eInvalidParameter;
+            }
         }
 
         return ISetSampledImageBindlessIndex(index, image, subres);
     }
 
     Result Device::SetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
-        if (m_settings.resource_count <= index) {
-            return Result::eInvalidParameter;
-        }
+        if (GetSettings().debug_mode) {
+            if (m_settings.resource_count <= index) {
+                return Result::eInvalidParameter;
+            }
 
-        if (!image.GetDesc().flags.Has(ImageFlagBit::eStorage)) {
-            return Result::eInvalidParameter;
-        }
+            if (!image.GetDesc().flags.Has(ImageFlagBit::eStorage)) {
+                return Result::eInvalidParameter;
+            }
 
-        ImageSubresource subres(subresource);
-        if (!CheckImageSubresource(*this, image, subres)) {
-            return Result::eInvalidParameter;
+            ImageSubresource subres(subresource);
+            if (!CheckImageSubresource(*this, image, subres)) {
+                return Result::eInvalidParameter;
+            }
         }
 
         return ISetStorageImageBindlessIndex(index, image, subresource);
     }
 
     Result Device::SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept {
-        if (m_settings.sampler_count <= index) {
-            return Result::eInvalidParameter;
+        if (GetSettings().debug_mode) {
+            if (m_settings.sampler_count <= index) {
+                return Result::eInvalidParameter;
+            }
         }
 
         return ISetSamplerBindlessIndex(index, sampler);
     }
 
     Result Device::SubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept {
-        QueueType queue_type{};
-        
-        if (desc.command_buffers.size() > 0) {
-            queue_type = desc.command_buffers[0]->GetDesc().queue_type;
-        }
-
-        for (const auto *command_buffer : desc.command_buffers) {
-            if (!command_buffer) {
-                return Result::eInvalidParameter;
+        if (GetSettings().debug_mode) {
+            QueueType queue_type{};
+            
+            if (desc.command_buffers.size() > 0) {
+                queue_type = desc.command_buffers[0]->GetDesc().queue_type;
             }
 
-            if (command_buffer->GetDesc().queue_type != queue_type) {
-                return Result::eInvalidParameter;
-            }
-        }
+            for (const auto *command_buffer : desc.command_buffers) {
+                if (!command_buffer) {
+                    return Result::eInvalidParameter;
+                }
 
-        for (const auto &wait_semaphore : desc.wait_semaphores) {
-            if (!wait_semaphore.semaphore) {
-                return Result::eInvalidParameter;
+                if (command_buffer->GetDesc().queue_type != queue_type) {
+                    return Result::eInvalidParameter;
+                }
             }
-        }
 
-        for (const auto &signal_semaphore : desc.signal_semaphores) {
-            if (!signal_semaphore.semaphore) {
-                return Result::eInvalidParameter;
+            for (const auto &wait_semaphore : desc.wait_semaphores) {
+                if (!wait_semaphore.semaphore) {
+                    return Result::eInvalidParameter;
+                }
+            }
+
+            for (const auto &signal_semaphore : desc.signal_semaphores) {
+                if (!signal_semaphore.semaphore) {
+                    return Result::eInvalidParameter;
+                }
             }
         }
 
@@ -431,9 +460,11 @@ namespace DnmRHI {
     }
 
     Result Device::WaitSemaphore(const WaitSemaphoreDesc &desc) noexcept {
-        for (const auto &wait_semaphore : desc.semaphores) {
-            if (!wait_semaphore.semaphore) {
-                return Result::eInvalidParameter;
+        if (GetSettings().debug_mode) {
+            for (const auto &wait_semaphore : desc.semaphores) {
+                if (!wait_semaphore.semaphore) {
+                    return Result::eInvalidParameter;
+                }
             }
         }
         
@@ -441,8 +472,10 @@ namespace DnmRHI {
     }
 
     Result Device::Present(const PresentDesc &desc) noexcept {
-        if (!desc.swapchain) {
-            return Result::eInvalidParameter;
+        if (GetSettings().debug_mode) {
+            if (!desc.swapchain) {
+                return Result::eInvalidParameter;
+            }
         }
 
         return IPresent(desc);

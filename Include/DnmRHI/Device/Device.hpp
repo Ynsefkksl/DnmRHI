@@ -13,21 +13,22 @@ namespace slang {
 }
 
 namespace DnmRHI {
-    enum class MessageSeverty {
+    enum class MessageSeverity {
         eInfo,
-        eWarn,
+        eWarning,
         eError
     };
 
     enum class MessageCatagory {
         eGraphicsBackend,
-        eInvalidDesc,
-        eShaderCompile
+        eShaderCompiler,
+        eRHI,
+        eUser
     };
 
     enum class MessageID : u64{};
 
-    using DebugCallback = std::function<void(MessageSeverty severty, MessageCatagory catagory, MessageID message_id, std::string_view message)>;
+    using DebugCallbackFn = std::function<void(MessageSeverity severty, MessageCatagory catagory, MessageID message_id, std::string_view message)>;
 
     struct PresentDesc {
         Swapchain *swapchain;
@@ -92,7 +93,8 @@ namespace DnmRHI {
         u32 sampler_count{2'000};
 
         b8 shader_debug: 1{};
-        b8 desc_validation: 1{};
+        b8 debug_mode: 1{};
+        DebugCallbackFn debug_callback{};
         // TODO: validation settings
         b8 validation_layer: 1{};
         // this can be broke nsight, rgp etc.
@@ -106,8 +108,9 @@ namespace DnmRHI {
         constexpr auto &SetResourceCount(u32 resource_count) noexcept { this->resource_count = resource_count; return *this; }
         constexpr auto &SetSamplerCount(u32 sampler_count) noexcept { this->sampler_count = sampler_count; return *this; }
 
+        constexpr auto &SetDebugCallback(DebugCallbackFn callback) noexcept { this->debug_callback = std::move(callback); return *this; }
         constexpr auto &SetShaderDebug(b8 shader_debug) noexcept { this->shader_debug = shader_debug; return *this; }
-        constexpr auto &SetDescValidation(b8 desc_validation) noexcept { this->desc_validation = desc_validation; return *this; }
+        constexpr auto &SetDisableValidation(b8 disable_validation) noexcept { this->debug_mode = disable_validation; return *this; }
         constexpr auto &SetValidationLayer(b8 validation_layer) noexcept { this->validation_layer = validation_layer; return *this; }
         constexpr auto &SetGpuAssistedValidation(b8 gpu_assisted_validaiton) noexcept { this->gpu_assisted_validaiton = gpu_assisted_validaiton; return *this; }
         constexpr auto &SetShaderStencilExport(b8 shader_stencil_export) noexcept { this->shader_stencil_export = shader_stencil_export; return *this; }
@@ -133,7 +136,13 @@ namespace DnmRHI {
 
     class Device {
     protected:
-        explicit Device(const DeviceInfo &info, DeviceSettings settings) : m_device_info(info), m_settings(settings) {}
+        explicit Device(const DeviceInfo &info, DeviceSettings settings) : m_device_info(info), m_settings(settings) {
+            if (m_settings.gpu_assisted_validaiton)
+                m_settings.validation_layer = true;
+
+            if (m_settings.validation_layer)
+                m_settings.debug_mode = true;
+        }
     public:
         virtual ~Device();
 
@@ -164,6 +173,9 @@ namespace DnmRHI {
         [[nodiscard]] auto GetSettings() const noexcept { return m_settings; }
 
         [[nodiscard]] auto *GetShaderCompiler() const noexcept { return m_shader_compiler; }
+        void Message(MessageSeverity severty, MessageCatagory catagory, MessageID message_id, std::string_view message) {
+            if (m_settings.debug_callback) m_settings.debug_callback(severty, catagory, message_id, message);
+        }
 
         // helpers
         [[nodiscard]] auto IsNvidia() const noexcept { return m_device_info.properties.vendor == GpuVendor::eNvidia; }

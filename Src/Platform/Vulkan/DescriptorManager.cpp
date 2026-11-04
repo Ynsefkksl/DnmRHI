@@ -5,7 +5,7 @@
 
 namespace DnmRHI::Vk {
     namespace Utility {
-        static vk::DescriptorSetLayout CreateResourceDescriptorSetLayout(vk::Device device, u32 count) noexcept {
+        static vk::DescriptorSetLayout CreateResourceDescriptorSetLayout(Device &device, u32 count) noexcept {
             constexpr auto descriptor_type_list = std::array{
                 vk::DescriptorType::eSampledImage,
                 vk::DescriptorType::eStorageImage,
@@ -49,10 +49,10 @@ namespace DnmRHI::Vk {
                     .setPNext(&binding_flags_create_info)
                     ;
     
-            return device.createDescriptorSetLayout(create_info);
+            return device.GetDevice().createDescriptorSetLayout(create_info, device.GetAllocationCallbacks());
         }
 
-        static vk::DescriptorSetLayout CreateDescriptorSetLayout(vk::Device device, vk::DescriptorType type, u32 count) noexcept {
+        static vk::DescriptorSetLayout CreateSamplerDescriptorSetLayout(Device &device, vk::DescriptorType type, u32 count) noexcept {
             const auto bindless_binding_flags 
                 = vk::DescriptorBindingFlagBits::eUpdateUnusedWhilePending 
                 | vk::DescriptorBindingFlagBits::ePartiallyBound;
@@ -79,10 +79,10 @@ namespace DnmRHI::Vk {
                     .setPNext(&binding_flags_create_info)
                     ;
     
-            return device.createDescriptorSetLayout(create_info);
+            return device.GetDevice().createDescriptorSetLayout(create_info, device.GetAllocationCallbacks());
         }
     
-        static vk::PipelineLayout CreatePipelineLayout(vk::Device device, std::span<const vk::DescriptorSetLayout> sets) noexcept {
+        static vk::PipelineLayout CreatePipelineLayout(Device &device, std::span<const vk::DescriptorSetLayout> sets) noexcept {
             const auto push_constant = vk::PushConstantRange{vk::ShaderStageFlagBits::eAll, 0, c_Push_Constant_Size};
     
             const auto create_info
@@ -91,7 +91,7 @@ namespace DnmRHI::Vk {
                     .setSetLayouts(sets)
                     ;
     
-            return device.createPipelineLayout(create_info);
+            return device.GetDevice().createPipelineLayout(create_info, device.GetAllocationCallbacks());
         }
     }
 
@@ -114,9 +114,11 @@ namespace DnmRHI::Vk {
             ;
     }
 
-    DescriptorManagerBuffer::DescriptorManagerBuffer(Device &device) : DescriptorManager(device) {
-        m_resource_set_layout = Utility::CreateResourceDescriptorSetLayout(m_device.GetDevice(), m_device.GetSettings().resource_count);
-        m_sampler_set_layout = Utility::CreateDescriptorSetLayout(m_device.GetDevice(), vk::DescriptorType::eSampler, m_device.GetSettings().sampler_count);
+    DescriptorManagerBuffer::DescriptorManagerBuffer(Device &device) : DescriptorManager(device),
+        m_samplers(m_device.GetSettings().sampler_count) {
+
+        m_resource_set_layout = Utility::CreateResourceDescriptorSetLayout(m_device, m_device.GetSettings().resource_count);
+        m_sampler_set_layout = Utility::CreateSamplerDescriptorSetLayout(m_device, vk::DescriptorType::eSampler, m_device.GetSettings().sampler_count);
         SET_DEBUG_NAME_VK_OBJECT(m_device.GetDevice(), m_resource_set_layout, "ResourceSetLayout");
         SET_DEBUG_NAME_VK_OBJECT(m_device.GetDevice(), m_sampler_set_layout, "SamplerSetLayout");
 
@@ -124,7 +126,7 @@ namespace DnmRHI::Vk {
         m_sampler_layout_size = m_device.GetDevice().getDescriptorSetLayoutSizeEXT(m_sampler_set_layout);
 
         const auto layouts = {m_resource_set_layout, m_sampler_set_layout};
-        m_pipeline_layout = Utility::CreatePipelineLayout(m_device.GetDevice(), layouts);
+        m_pipeline_layout = Utility::CreatePipelineLayout(m_device, layouts);
         SET_DEBUG_NAME_VK_OBJECT(m_device.GetDevice(), m_pipeline_layout, "GlobalPipelineLayout");
 
         auto buff_create_info 
@@ -151,12 +153,14 @@ namespace DnmRHI::Vk {
     }
 
     DescriptorManagerBuffer::~DescriptorManagerBuffer() {
-        m_device.GetDevice().destroy(m_resource_set_layout);
-        m_device.GetDevice().destroy(m_sampler_set_layout);
-        m_device.GetDevice().destroy(m_pipeline_layout);
+        m_device.GetDevice().destroy(m_resource_set_layout, m_device.GetAllocationCallbacks());
+        m_device.GetDevice().destroy(m_sampler_set_layout, m_device.GetAllocationCallbacks());
+        m_device.GetDevice().destroy(m_pipeline_layout, m_device.GetAllocationCallbacks());
 
-        for (const auto sampler : m_samplers)
-            m_device.GetDevice().destroy(sampler);
+        for (const auto sampler : m_samplers) {
+            if (sampler == VK_NULL_HANDLE) continue;
+            m_device.GetDevice().destroy(sampler, m_device.GetAllocationCallbacks());
+        }
     }
     
     void DescriptorManagerBuffer::PushConstants(vk::CommandBuffer cmd_buffer, const void *data, u32 size, u32 offset) const noexcept {
@@ -238,9 +242,18 @@ namespace DnmRHI::Vk {
         WriteResourceDescriptor(index, vk::DescriptorType::eStorageImage, &descriptor_image_info);
     }
 
-    void DescriptorManagerBuffer::SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler_desc) { 
-        const auto sampler = m_device.GetDevice().createSampler(GetSamplerCreateInfo(sampler_desc));
-        m_samplers.push_back(sampler);
+    void DescriptorManagerBuffer::SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler_desc) {
+        const auto sampler = m_device.GetDevice().createSampler(GetSamplerCreateInfo(sampler_desc), m_device.GetAllocationCallbacks());
+        
+        {
+            auto &sampler_in_vector = m_samplers[index];
+    
+            if (sampler_in_vector != VK_NULL_HANDLE) {
+                m_device.GetDevice().destroy(sampler_in_vector, m_device.GetAllocationCallbacks());
+            }
+            
+            sampler_in_vector = sampler;
+        }
 
         m_device.GetDevice().getDescriptorEXT(
                 vk::DescriptorGetInfoEXT{}.setType(vk::DescriptorType::eSampler).setData(&sampler),

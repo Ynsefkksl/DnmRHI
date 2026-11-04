@@ -9,7 +9,7 @@ namespace DnmRHI::Vk {
         explicit GraphicsPipeline(Vk::Device &device, const GraphicsPipelineDesc &desc);
         virtual ~GraphicsPipeline() override { 
             GetVkDevice.GetDevice().waitIdle();
-            GetVkDevice.GetDevice().destroy(m_pipeline); 
+            GetVkDevice.GetDevice().destroy(m_pipeline, GetVkDevice.GetAllocationCallbacks()); 
         }
 
         [[nodiscard]] auto GetPipeline() const noexcept { return m_pipeline; }

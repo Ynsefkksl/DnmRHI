@@ -13,7 +13,7 @@ namespace DnmRHI::Vk {
                 .setPNext(&type_info)
                 ;
 
-        m_semaphore = GetVkDevice.GetDevice().createSemaphore(create_info);
+        m_semaphore = GetVkDevice.GetDevice().createSemaphore(create_info, GetVkDevice.GetAllocationCallbacks());
         if (!desc.name.empty()) SET_DEBUG_NAME_VK_OBJECT(GetVkDevice.GetDevice(), m_semaphore, desc.name.data());
     }
 

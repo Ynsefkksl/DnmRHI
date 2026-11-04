@@ -61,7 +61,9 @@ namespace DnmRHI::Vk {
         const b8 c_IsSwapchainImage;
         const vk::ImageView c_SwapchainImageView;
     private:
-        [[nodiscard]] vk::ImageView CreateImageView(DnmRHI::ImageSubresource subresource) const noexcept { return GetVkDevice.GetDevice().createImageView(GetCreateImageViewInfo(subresource)); }
+        [[nodiscard]] vk::ImageView CreateImageView(DnmRHI::ImageSubresource subresource) const noexcept { 
+            return GetVkDevice.GetDevice().createImageView(GetCreateImageViewInfo(subresource), GetVkDevice.GetAllocationCallbacks()); 
+        }
 
         vk::Image m_image{};
         VmaAllocation m_allocation{};

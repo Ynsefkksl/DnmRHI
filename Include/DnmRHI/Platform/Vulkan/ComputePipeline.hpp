@@ -9,7 +9,7 @@ namespace DnmRHI::Vk {
         explicit ComputePipeline(Vk::Device &device, const ComputePipelineDesc &desc);
         virtual ~ComputePipeline() override { 
             GetVkDevice.GetDevice().waitIdle();
-            GetVkDevice.GetDevice().destroy(m_pipeline); 
+            GetVkDevice.GetDevice().destroy(m_pipeline, GetVkDevice.GetAllocationCallbacks()); 
         }
 
         [[nodiscard]] auto GetPipeline() const noexcept { return m_pipeline; }

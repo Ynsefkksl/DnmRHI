@@ -191,217 +191,123 @@ namespace DnmRHI::Vk {
         std::unreachable();
     }
 
+    [[nodiscard]] constexpr auto To_Vk(DnmRHI::PipelineFlags stages) noexcept {
+        vk::PipelineStageFlags2 vk_stages = {};
+        if (stages.Has(PipelineFlagBit::eCopy)) {
+            vk_stages |= vk::PipelineStageFlagBits2::eCopy;
+        }
+        if (stages.Has(PipelineFlagBit::eBlit)) {
+            vk_stages |= vk::PipelineStageFlagBits2::eBlit;
+        }
+        if (stages.Has(PipelineFlagBit::eResolve)) {
+            vk_stages |= vk::PipelineStageFlagBits2::eResolve;
+        }
+        if (stages.Has(PipelineFlagBit::eIndexInput)) {
+            vk_stages |= vk::PipelineStageFlagBits2::eIndexInput;
+        }
+        if (stages.Has(PipelineFlagBit::eIndirect)) {
+            vk_stages |= vk::PipelineStageFlagBits2::eDrawIndirect;
+        }
+        if (stages.Has(PipelineFlagBit::eColorAttachmentOutput)) {
+            vk_stages |= vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+        }
+        if (stages.Has(PipelineFlagBit::eEarlyFragmentTests)) {
+            vk_stages |= vk::PipelineStageFlagBits2::eEarlyFragmentTests;
+        }
+        if (stages.Has(PipelineFlagBit::eLateFragmentTests)) {
+            vk_stages |= vk::PipelineStageFlagBits2::eLateFragmentTests;
+        }
+        if (stages.Has(PipelineFlagBit::eConditionalRendering)) {
+            vk_stages |= vk::PipelineStageFlagBits2::eConditionalRenderingEXT;
+        }
+        if (stages.Has(PipelineFlagBit::eVertexShader)) {
+            vk_stages |= vk::PipelineStageFlagBits2::eVertexShader;
+        }
+        if (stages.Has(PipelineFlagBit::eFragmentShader)) {
+            vk_stages |= vk::PipelineStageFlagBits2::eFragmentShader;
+        }
+        if (stages.Has(PipelineFlagBit::eComputeShader)) {
+            vk_stages |= vk::PipelineStageFlagBits2::eComputeShader;
+        }
+        if (stages.Has(PipelineFlagBit::eTaskShader)) {
+            vk_stages |=vk ::PipelineStageFlagBits2::eTaskShaderEXT;
+        }
+        if (stages.Has(PipelineFlagBit::eMeshShader)) {
+            vk_stages |=vk ::PipelineStageFlagBits2::eMeshShaderEXT;
+        }
+        if (stages.Has(PipelineFlagBit::eRayTracingShader)) {
+            vk_stages |=vk ::PipelineStageFlagBits2::eRayTracingShaderKHR;
+        }
+        if (stages.Has(PipelineFlagBit::eVariableRateShading)) {
+            vk_stages |=vk ::PipelineStageFlagBits2::eFragmentShadingRateAttachmentKHR;
+        }
+        if (stages.Has(PipelineFlagBit::eAccelerationStructureBuild)) {
+            vk_stages |=vk ::PipelineStageFlagBits2::eAccelerationStructureBuildKHR;
+        }
+        if (stages.Has(PipelineFlagBit::eAccelerationStructureCopy)) {
+            vk_stages |=vk ::PipelineStageFlagBits2::eAccelerationStructureCopyKHR;
+        }
+        return vk_stages;
+    }
+
     [[nodiscard]] constexpr auto To_Vk(DnmRHI::AccessFlags access_flags) noexcept {
-        Sync barrier;
-        if (access_flags.Has(AccessFlagBit::eCopyRead)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eCopy;
-            barrier.access |= vk::AccessFlagBits2::eTransferRead;
+        vk::AccessFlags2 vk_access_flags{};
+        if (access_flags.Has(AccessFlagBit::eTransferRead)) {
+            vk_access_flags |= vk::AccessFlagBits2::eTransferRead;
         }
-        if (access_flags.Has(AccessFlagBit::eCopyWrite)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eCopy;
-            barrier.access |= vk::AccessFlagBits2::eTransferWrite;
-        }
-        if (access_flags.Has(AccessFlagBit::eBlitRead)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eBlit;
-            barrier.access |= vk::AccessFlagBits2::eTransferRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eBlitWrite)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eBlit;
-            barrier.access |= vk::AccessFlagBits2::eTransferWrite;
-        }
-        if (access_flags.Has(AccessFlagBit::eResolveRead)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eResolve;
-            barrier.access |= vk::AccessFlagBits2::eTransferRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eResolveWrite)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eResolve;
-            barrier.access |= vk::AccessFlagBits2::eTransferWrite;
-        }
-        if (access_flags.Has(AccessFlagBit::eVertexRead)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eVertexAttributeInput;
-            barrier.access |= vk::AccessFlagBits2::eVertexAttributeRead;
+        if (access_flags.Has(AccessFlagBit::eTransferWrite)) {
+            vk_access_flags |= vk::AccessFlagBits2::eTransferWrite;
         }
         if (access_flags.Has(AccessFlagBit::eIndexRead)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eIndexInput;
-            barrier.access |= vk::AccessFlagBits2::eIndexRead;
+            vk_access_flags |= vk::AccessFlagBits2::eIndexRead;
         }
         if (access_flags.Has(AccessFlagBit::eIndirectRead)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eDrawIndirect;
-            barrier.access |= vk::AccessFlagBits2::eIndirectCommandRead;
+            vk_access_flags |= vk::AccessFlagBits2::eIndirectCommandRead;
         }
         if (access_flags.Has(AccessFlagBit::eColorAttachmentWrite)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eColorAttachmentOutput;
-            barrier.access |= vk::AccessFlagBits2::eColorAttachmentWrite;
+            vk_access_flags |= vk::AccessFlagBits2::eColorAttachmentWrite;
         }
         if (access_flags.Has(AccessFlagBit::eColorAttachmentRead)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eColorAttachmentOutput;
-            barrier.access |= vk::AccessFlagBits2::eColorAttachmentRead;
+            vk_access_flags |= vk::AccessFlagBits2::eColorAttachmentRead;
         }
-        if (access_flags.Has(AccessFlagBit::eEarlyFragmentWrite)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eEarlyFragmentTests;
-            barrier.access |= vk::AccessFlagBits2::eDepthStencilAttachmentWrite;
+        if (access_flags.Has(AccessFlagBit::eDepthStencilWrite)) {
+            vk_access_flags |= vk::AccessFlagBits2::eDepthStencilAttachmentWrite;
         }
-        if (access_flags.Has(AccessFlagBit::eEarlyFragmentRead)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eEarlyFragmentTests;
-            barrier.access |= vk::AccessFlagBits2::eDepthStencilAttachmentRead;
+        if (access_flags.Has(AccessFlagBit::eDepthStencilRead)) {
+            vk_access_flags |= vk::AccessFlagBits2::eDepthStencilAttachmentRead;
         }
-        if (access_flags.Has(AccessFlagBit::eLateFragmentWrite)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eLateFragmentTests;
-            barrier.access |= vk::AccessFlagBits2::eDepthStencilAttachmentWrite;
+        if (access_flags.Has(AccessFlagBit::eUniformRead)) {
+            vk_access_flags |= vk::AccessFlagBits2::eUniformRead;
         }
-        if (access_flags.Has(AccessFlagBit::eLateFragmentRead)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eLateFragmentTests;
-            barrier.access |= vk::AccessFlagBits2::eDepthStencilAttachmentRead;
+        if (access_flags.Has(AccessFlagBit::eSampledRead)) {
+            vk_access_flags |= vk::AccessFlagBits2::eShaderSampledRead;
         }
-        if (access_flags.Has(AccessFlagBit::eStorageWriteRayTracingShaders)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eRayTracingShaderKHR;
-            barrier.access |= vk::AccessFlagBits2::eShaderStorageWrite;
+        if (access_flags.Has(AccessFlagBit::eStorageRead)) {
+            vk_access_flags |= vk::AccessFlagBits2::eShaderStorageRead;
         }
-        if (access_flags.Has(AccessFlagBit::eStorageReadRayTracingShaders)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eRayTracingShaderKHR;
-            barrier.access |= vk::AccessFlagBits2::eShaderStorageRead;
+        if (access_flags.Has(AccessFlagBit::eStorageWrite)) {
+            vk_access_flags |= vk::AccessFlagBits2::eShaderStorageWrite;
         }
-        if (access_flags.Has(AccessFlagBit::eSampledReadRayTracingShaders)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eRayTracingShaderKHR;
-            barrier.access |= vk::AccessFlagBits2::eShaderSampledRead;
+        if (access_flags.Has(AccessFlagBit::eAccelerationStructureRead)) {
+            vk_access_flags |= vk::AccessFlagBits2::eAccelerationStructureReadKHR;
         }
-        if (access_flags.Has(AccessFlagBit::eUniformReadRayTracingShaders)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eRayTracingShaderKHR;
-            barrier.access |= vk::AccessFlagBits2::eUniformRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eAccelerationStructureReadRayTracingShaders)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eRayTracingShaderKHR;
-            barrier.access |= vk::AccessFlagBits2::eAccelerationStructureReadKHR;
-        }
-        if (access_flags.Has(AccessFlagBit::eStorageWriteTaskShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eTaskShaderEXT;
-            barrier.access |= vk::AccessFlagBits2::eShaderStorageWrite;
-        }
-        if (access_flags.Has(AccessFlagBit::eStorageReadTaskShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eTaskShaderEXT;
-            barrier.access |= vk::AccessFlagBits2::eShaderStorageRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eSampledReadTaskShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eTaskShaderEXT;
-            barrier.access |= vk::AccessFlagBits2::eShaderSampledRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eUniformReadTaskShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eTaskShaderEXT;
-            barrier.access |= vk::AccessFlagBits2::eUniformRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eAccelerationStructureReadTaskShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eTaskShaderEXT;
-            barrier.access |= vk::AccessFlagBits2::eAccelerationStructureReadKHR;
-        }
-        if (access_flags.Has(AccessFlagBit::eStorageWriteMeshShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eMeshShaderEXT;
-            barrier.access |= vk::AccessFlagBits2::eShaderStorageWrite;
-        }
-        if (access_flags.Has(AccessFlagBit::eStorageReadMeshShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eMeshShaderEXT;
-            barrier.access |= vk::AccessFlagBits2::eShaderStorageRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eSampledReadMeshShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eMeshShaderEXT;
-            barrier.access |= vk::AccessFlagBits2::eShaderSampledRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eUniformReadMeshShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eMeshShaderEXT;
-            barrier.access |= vk::AccessFlagBits2::eUniformRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eAccelerationStructureReadMeshShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eMeshShaderEXT;
-            barrier.access |= vk::AccessFlagBits2::eAccelerationStructureReadKHR;
-        }
-        if (access_flags.Has(AccessFlagBit::eStorageWriteVertexShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eVertexShader;
-            barrier.access |= vk::AccessFlagBits2::eShaderStorageWrite;
-        }
-        if (access_flags.Has(AccessFlagBit::eStorageReadVertexShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eVertexShader;
-            barrier.access |= vk::AccessFlagBits2::eShaderStorageRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eSampledReadVertexShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eVertexShader;
-            barrier.access |= vk::AccessFlagBits2::eShaderSampledRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eUniformReadVertexShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eVertexShader;
-            barrier.access |= vk::AccessFlagBits2::eUniformRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eAccelerationStructureReadVertexShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eVertexShader;
-            barrier.access |= vk::AccessFlagBits2::eAccelerationStructureReadKHR;
-        }
-        if (access_flags.Has(AccessFlagBit::eStorageWriteFragmentShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eFragmentShader;
-            barrier.access |= vk::AccessFlagBits2::eShaderStorageWrite;
-        }
-        if (access_flags.Has(AccessFlagBit::eStorageReadFragmentShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eFragmentShader;
-            barrier.access |= vk::AccessFlagBits2::eShaderStorageRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eSampledReadFragmentShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eFragmentShader;
-            barrier.access |= vk::AccessFlagBits2::eShaderSampledRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eUniformReadFragmentShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eFragmentShader;
-            barrier.access |= vk::AccessFlagBits2::eUniformRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eAccelerationStructureReadFragmentShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eFragmentShader;
-            barrier.access |= vk::AccessFlagBits2::eAccelerationStructureReadKHR;
-        }
-        if (access_flags.Has(AccessFlagBit::eStorageWriteComputeShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eComputeShader;
-            barrier.access |= vk::AccessFlagBits2::eShaderStorageWrite;
-        }
-        if (access_flags.Has(AccessFlagBit::eStorageReadComputeShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eComputeShader;
-            barrier.access |= vk::AccessFlagBits2::eShaderStorageRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eSampledReadComputeShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eComputeShader;
-            barrier.access |= vk::AccessFlagBits2::eShaderSampledRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eUniformReadComputeShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eComputeShader;
-            barrier.access |= vk::AccessFlagBits2::eUniformRead;
-        }
-        if (access_flags.Has(AccessFlagBit::eAccelerationStructureReadComputeShader)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eComputeShader;
-            barrier.access |= vk::AccessFlagBits2::eAccelerationStructureReadKHR;
-        }
-        if (access_flags.Has(AccessFlagBit::eVariableRateShadingRead)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eFragmentShadingRateAttachmentKHR;
-            barrier.access |= vk::AccessFlagBits2::eFragmentShadingRateAttachmentReadKHR;
-        }
-        if (access_flags.Has(AccessFlagBit::eConditionalRenderingRead)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eConditionalRenderingEXT;
-            barrier.access |= vk::AccessFlagBits2::eConditionalRenderingReadEXT;
+        if (access_flags.Has(AccessFlagBit::eAccelerationStructureWrite)) {
+            vk_access_flags |= vk::AccessFlagBits2::eAccelerationStructureWriteKHR;
         }
         if (access_flags.Has(AccessFlagBit::eShaderBindingTableRead)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eConditionalRenderingEXT;
-            barrier.access |= vk::AccessFlagBits2::eConditionalRenderingReadEXT;
+            vk_access_flags |= vk::AccessFlagBits2::eShaderBindingTableReadKHR;
         }
-        if (access_flags.Has(AccessFlagBit::eAccelerationStructureBuildRead)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eAccelerationStructureBuildKHR;
-            barrier.access |= vk::AccessFlagBits2::eAccelerationStructureReadKHR;
+        if (access_flags.Has(AccessFlagBit::eVariableRateShadingRead)) {
+            vk_access_flags |= vk::AccessFlagBits2::eFragmentShadingRateAttachmentReadKHR;
         }
-        if (access_flags.Has(AccessFlagBit::eAccelerationStructureBuildWrite)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eAccelerationStructureBuildKHR;
-            barrier.access |= vk::AccessFlagBits2::eAccelerationStructureWriteKHR;
-        }
-        if (access_flags.Has(AccessFlagBit::eAccelerationStructureCopyRead)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eAccelerationStructureCopyKHR;
-            barrier.access |= vk::AccessFlagBits2::eAccelerationStructureReadKHR;
-        }
-        if (access_flags.Has(AccessFlagBit::eAccelerationStructureCopyWrite)) {
-            barrier.stage |= vk::PipelineStageFlagBits2::eAccelerationStructureCopyKHR;
-            barrier.access |= vk::AccessFlagBits2::eAccelerationStructureWriteKHR;
-        }
-        return barrier;
+        return vk_access_flags;
+    }
+
+    [[nodiscard]] constexpr auto To_Vk(DnmRHI::SyncInfo sync_info) noexcept {
+        return DnmRHI::Vk::Sync {
+            To_Vk(sync_info.stages),
+            To_Vk(sync_info.access)
+        };
     }
 
     [[nodiscard]] constexpr auto To_Vk(DnmRHI::FrontFace face) noexcept {
