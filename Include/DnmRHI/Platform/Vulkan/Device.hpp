@@ -69,6 +69,7 @@ namespace DnmRHI::Vk {
         ~Device() noexcept;
 
         virtual Result IInit() noexcept override;
+        virtual Result IWaitIdle() noexcept override;
 
         [[nodiscard]] virtual ResultOr<DnmRHI::Buffer *> ICreateBuffer(const BufferDesc &desc) noexcept override;
         [[nodiscard]] virtual ResultOr<DnmRHI::Image *> ICreateImage(const ImageDesc &desc) noexcept override;
@@ -95,30 +96,20 @@ namespace DnmRHI::Vk {
         [[nodiscard]] auto *GetAllocator() const noexcept { return m_vma_allocator; }
         [[nodiscard]] auto *GetAllocationCallbacks() const noexcept { return m_vk_alloc_callbacks; }
 
-        [[nodiscard]] auto GetGeneralQueue() const noexcept { return m_general_queue; }
-        [[nodiscard]] auto GetComputeQueue() const noexcept { return m_compute_queue; }
-        [[nodiscard]] auto GetCopyQueue() const noexcept { return m_copy_queue; }
+        [[nodiscard]] auto GetGeneralQueue() const noexcept { return m_queue_families[static_cast<u32>(QueueType::eGeneral)]; }
+        [[nodiscard]] auto GetComputeQueue() const noexcept { return m_queue_families[static_cast<u32>(QueueType::eCompute)]; }
+        [[nodiscard]] auto GetCopyQueue() const noexcept { return m_queue_families[static_cast<u32>(QueueType::eCopy)]; }
 
-        [[nodiscard]] auto GetGeneralQueueFamilyIndex() const noexcept { return m_general_queue_family_index; }
-        [[nodiscard]] auto GetComputeQueueFamilyIndex() const noexcept { return m_compute_queue_family_index; }
-        [[nodiscard]] auto GetCopyQueueFamilyIndex() const noexcept { return m_copy_queue_family_index; }
+        [[nodiscard]] auto GetGeneralQueueFamilyIndex() const noexcept { return m_queue_families[static_cast<u32>(QueueType::eGeneral)]; }
+        [[nodiscard]] auto GetComputeQueueFamilyIndex() const noexcept { return m_queue_families[static_cast<u32>(QueueType::eCompute)]; }
+        [[nodiscard]] auto GetCopyQueueFamilyIndex() const noexcept { return m_queue_families[static_cast<u32>(QueueType::eCopy)]; }
 
         [[nodiscard]] auto GetQueue(QueueType type) const noexcept {
-            switch (type) {
-                case QueueType::eGeneral: return m_general_queue;
-                case QueueType::eCompute: return m_compute_queue;
-                case QueueType::eCopy: return m_copy_queue;
-                default: std::unreachable();
-            }
+            return m_queues[static_cast<u32>(type)];
         }
 
         [[nodiscard]] auto GetQueueFamilyIndex(QueueType type) const noexcept {
-            switch (type) {
-                case QueueType::eGeneral: return m_general_queue_family_index;
-                case QueueType::eCompute: return m_compute_queue_family_index;
-                case QueueType::eCopy: return m_copy_queue_family_index;
-                default: std::unreachable();
-            }
+            return m_queue_families[static_cast<u32>(type)];
         }
 
         [[nodiscard]] auto *GetDescriptorManager() const noexcept { return m_descriptor_manager; }
@@ -142,13 +133,8 @@ namespace DnmRHI::Vk {
         vk::PhysicalDevice m_physical_device;
         vk::Device m_device;
 
-        vk::Queue m_general_queue;
-        vk::Queue m_compute_queue;
-        vk::Queue m_copy_queue;
-
-        u32 m_general_queue_family_index;
-        u32 m_compute_queue_family_index;
-        u32 m_copy_queue_family_index;
+        vk::Queue m_queues[static_cast<u32>(QueueType::Count)];
+        u32 m_queue_families[static_cast<u32>(QueueType::Count)];
 
         VmaAllocator m_vma_allocator;
         DescriptorManager *m_descriptor_manager;

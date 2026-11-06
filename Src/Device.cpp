@@ -285,6 +285,10 @@ namespace DnmRHI {
         return IInit(); 
     }
 
+    Result Device::WaitIdle() noexcept {
+        return IWaitIdle();
+    }
+
     ResultOr<Buffer *> Device::CreateBuffer(const BufferDesc &desc) noexcept {
         if (GetSettings().debug_mode) {
             if (!CheckDesc(*this, desc))

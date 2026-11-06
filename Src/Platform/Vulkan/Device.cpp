@@ -25,7 +25,7 @@ namespace DnmRHI {
     #define MAKE_BLOCK_CAPABILITIES(name) VpBlockProperties{c_Vp_Profile, c_Vp_Profile.specVersion, name}
 
     static constexpr auto c_Vp_Profile =
-        VpProfileProperties{"VP_DNMRHI_VulkanRequirements", VK_API_VERSION_1_4}; 
+        VpProfileProperties{"VP_DNMRHI_VulkanRequirements", VK_API_VERSION_1_4};
 
     static constexpr VpBlockProperties c_Vp_Profile_Capabilities[] = {
         MAKE_BLOCK_CAPABILITIES("Baseline"),
@@ -62,7 +62,7 @@ namespace DnmRHI {
         return out;
     }
 
-    static vk::Device CreateDeviceManual(VpFunctions vp_funcs, vk::Instance instance, vk::PhysicalDevice physical_device, DeviceSettings device_settings, 
+    static vk::Device CreateDeviceManual(VpFunctions vp_funcs, vk::Instance instance, vk::PhysicalDevice physical_device, DeviceSettings device_settings,
         VulkanSettings vk_settings, std::span<const vk::DeviceQueueCreateInfo> queue_infos, Vk::DeviceFeatures &out_features, vk::AllocationCallbacks *allocation_callbacks) {
         vk::StructureChain<
             vk::PhysicalDeviceFeatures2,
@@ -180,7 +180,7 @@ namespace DnmRHI {
     }
 
     [[nodiscard]] static std::vector<VpBlockProperties> GetSupportedBlocks(std::span<const VpBlockProperties> prop, bool is_supported) {
-        if (is_supported) 
+        if (is_supported)
             return std::vector(prop.begin(), prop.end());
 
         std::vector<VpBlockProperties> out;
@@ -188,7 +188,7 @@ namespace DnmRHI {
         for (const auto &block_props : c_Vp_Profile_Capabilities) {
             b8 is_unsupported{false};
             for (const auto &unsupported_block : prop)
-                if (std::string(block_props.blockName) == unsupported_block.blockName) 
+                if (std::string(block_props.blockName) == unsupported_block.blockName)
                     is_unsupported = true;
 
             if (!is_unsupported)
@@ -214,7 +214,7 @@ namespace DnmRHI {
         VpFunctions functions = VK_NULL_HANDLE;
         auto result = vpCreateFunctions(&create_info, nullptr, &functions);
         if (result != VK_SUCCESS) return {};
-        
+
         return functions;
     }
 
@@ -274,7 +274,7 @@ namespace DnmRHI {
             vk::PhysicalDeviceProperties2 properties{};
             properties.pNext = &vk11;
             device.getProperties2(&properties, query_dispatcher);
-    
+
             switch (properties.properties.deviceType) {
                 case vk::PhysicalDeviceType::eOther: device_info_out.features.device_type = DeviceType::eUnknown; break;
                 case vk::PhysicalDeviceType::eIntegratedGpu: device_info_out.features.device_type = DeviceType::eIntegred; break;
@@ -282,7 +282,7 @@ namespace DnmRHI {
                 case vk::PhysicalDeviceType::eVirtualGpu: device_info_out.features.device_type = DeviceType::eVirtual; break;
                 case vk::PhysicalDeviceType::eCpu: device_info_out.features.device_type = DeviceType::eCpu; break;
             }
-            
+
             if (device_info_out.features.device_type == DeviceType::eDiscrete) {
                 const auto memory_properties = device.getMemoryProperties(query_dispatcher);
                 for (const auto mem_type : memory_properties.memoryTypes)
@@ -312,13 +312,13 @@ namespace DnmRHI {
             for (const auto &prop : block_properties)
                 blocks.emplace(std::string(prop.blockName));
 
-            device_info_out.features.mesh_and_task_shader_derivatives 
+            device_info_out.features.mesh_and_task_shader_derivatives
                 = blocks.contains("MeshAndTaskShaderDerivatives");
 
-            device_info_out.features.shader_stencil_export 
+            device_info_out.features.shader_stencil_export
                 = blocks.contains("ShaderStecilExport");
 
-            device_info_out.features.ray_tracing_invocation_reorder 
+            device_info_out.features.ray_tracing_invocation_reorder
                 = blocks.contains("RayTracingInvocationReorder");
 
             device_info_out.features.opacity_micromap
@@ -326,7 +326,7 @@ namespace DnmRHI {
         }
 
         return device_info_out;
-    } 
+    }
 
     std::vector<DeviceInfo> QuerySupportedVulkanDevices() noexcept {
         vk::detail::DynamicLoader dyn_loader;
@@ -427,7 +427,7 @@ namespace DnmRHI::Vk {
         return vk::False;
     }
 
-    Device::Device(const DeviceInfo &info, DeviceSettings device_settings, const VulkanSettings &settings) noexcept 
+    Device::Device(const DeviceInfo &info, DeviceSettings device_settings, const VulkanSettings &settings) noexcept
     : DnmRHI::Device(info, device_settings), m_vk_settings(settings) {
         m_vk_alloc_callbacks = new vk::AllocationCallbacks(*reinterpret_cast<vk::AllocationCallbacks *>(settings.allocation_callbacks));
         m_vma_device_alloc_callbacks = new VmaDeviceMemoryCallbacks(*reinterpret_cast<VmaDeviceMemoryCallbacks *>(settings.vma_device_memory_callbacks));
@@ -456,6 +456,11 @@ namespace DnmRHI::Vk {
         CreateVmaAllocator();
         CreateDescriptorManager();
 
+        return Result::eSuccess;
+    }
+
+    Result Device::IWaitIdle() noexcept {
+        GetDevice().waitIdle();
         return Result::eSuccess;
     }
 
@@ -488,7 +493,7 @@ namespace DnmRHI::Vk {
                 m_vk_device_features.xlib_surface = true;
         }
 
-        const auto debug_utils_it = std::ranges::find_if(supported_blocks, 
+        const auto debug_utils_it = std::ranges::find_if(supported_blocks,
                 [] (const auto &block) {
                     return std::string(block.blockName) == "DebugUtils";
                 });
@@ -529,7 +534,7 @@ namespace DnmRHI::Vk {
             enabled_features.push_back(vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot);
         }
 
-        const auto validataion_features 
+        const auto validataion_features
             = vk::ValidationFeaturesEXT{}.setEnabledValidationFeatures(enabled_features);
 
         const auto debug_create_info
@@ -543,7 +548,7 @@ namespace DnmRHI::Vk {
                                             | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
                                         )
                 .setPfnUserCallback(
-                    m_vk_settings.debug_callback_func ? (vk::PFN_DebugUtilsMessengerCallbackEXT)m_vk_settings.debug_callback_func 
+                    m_vk_settings.debug_callback_func ? (vk::PFN_DebugUtilsMessengerCallbackEXT)m_vk_settings.debug_callback_func
                         : (vk::PFN_DebugUtilsMessengerCallbackEXT)DebugCallback)
                 .setPUserData(&m_settings.debug_callback)
                 .setPNext(m_settings.validation_layer ? &validataion_features : nullptr)
@@ -567,7 +572,7 @@ namespace DnmRHI::Vk {
 
         VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance);
 
-        if (GetSettings().validation_layer) m_debug_messenger = m_instance.createDebugUtilsMessengerEXT(debug_create_info, GetAllocationCallbacks());    
+        if (GetSettings().validation_layer) m_debug_messenger = m_instance.createDebugUtilsMessengerEXT(debug_create_info, GetAllocationCallbacks());
     }
 
     void Device::CreateDevice(const VpFunctions &vp_functions) noexcept {
@@ -584,7 +589,7 @@ namespace DnmRHI::Vk {
         }
 
         if (m_physical_device == VK_NULL_HANDLE) return;
- 
+
         {
             const vk::SampleCountFlags supported_samples = m_physical_device.getProperties().limits.framebufferColorSampleCounts;
 
@@ -612,11 +617,11 @@ namespace DnmRHI::Vk {
             else if (vk::SampleCountFlagBits::e2 & supported_samples)
                 m_vk_device_properties.sample_map[int(SampleCount::e8)] = vk::SampleCountFlagBits::e2;
 
-            //? 
+            //?
             m_vk_device_properties.pipeline_cache_uuid = m_physical_device.getProperties().pipelineCacheUUID;
         }
 
-        const float queue_priorities = 1.f; 
+        const float queue_priorities = 1.f;
 
         auto general_queue_create_info
             = vk::DeviceQueueCreateInfo{}
@@ -640,54 +645,70 @@ namespace DnmRHI::Vk {
                 ;
 
         {
-            m_general_queue_family_index = -1;
-            m_compute_queue_family_index = -1;
-            m_compute_queue_family_index = -1;
+            m_queue_families[static_cast<u32>(QueueType::eGeneral)] = -1;
+            m_queue_families[static_cast<u32>(QueueType::eCompute)] = -1;
+            m_queue_families[static_cast<u32>(QueueType::eCompute)] = -1;
 
             u32 general_queue_count{};
             u32 compute_queue_count{};
 
-            u8 family_index{};
+            u32 family_index{};
             for (const auto queue_family : m_physical_device.getQueueFamilyProperties2()) {
                 const auto count = queue_family.queueFamilyProperties.queueCount;
                 const auto flags = queue_family.queueFamilyProperties.queueFlags;
 
                 if (flags & vk::QueueFlagBits::eGraphics) {
-                    m_general_queue_family_index = family_index++;
+                    m_queue_families[static_cast<u32>(QueueType::eGeneral)] = family_index;
                     general_queue_count = count;
                 }
                 else if (flags & vk::QueueFlagBits::eCompute) {
-                    m_compute_queue_family_index = family_index++;
+                    m_queue_families[static_cast<u32>(QueueType::eCompute)] = family_index;
                     compute_queue_count = count;
                 }
-                else if (flags & vk::QueueFlagBits::eTransfer) {
-                    m_copy_queue_family_index = family_index++;
+                else if (flags & vk::QueueFlagBits::eTransfer
+					&& !(flags & vk::QueueFlagBits::eVideoEncodeKHR)
+					&& !(flags & vk::QueueFlagBits::eVideoDecodeKHR)
+					&& !(flags & vk::QueueFlagBits::eOpticalFlowNV)
+					) {
+                    m_queue_families[static_cast<u32>(QueueType::eCopy)] = family_index;
                 }
-                else {
-                    ++family_index;
-                }
+                ++family_index;
             }
 
             general_queue_create_info
-                .setQueueFamilyIndex(m_general_queue_family_index)
+                .setQueueFamilyIndex(m_queue_families[static_cast<u32>(QueueType::eGeneral)])
                 .setQueueCount(1)
                 ;
 
             compute_queue_create_info
-                .setQueueFamilyIndex(m_compute_queue_family_index)
+                .setQueueFamilyIndex(m_queue_families[static_cast<u32>(QueueType::eCompute)])
                 .setQueueCount(1)
                 ;
 
             copy_queue_create_info
-                .setQueueFamilyIndex(m_copy_queue_family_index)
+                .setQueueFamilyIndex(m_queue_families[static_cast<u32>(QueueType::eCopy)])
                 .setQueueCount(1)
                 ;
 
-            if (m_compute_queue_family_index == u8(-1))
-                compute_queue_create_info.setQueueCount(0);
 
-            if (m_copy_queue_family_index == u8(-1))
-                copy_queue_create_info.setQueueCount(0);
+            if (m_queue_families[static_cast<u32>(QueueType::eCompute)] == -1) {
+                m_queue_families[static_cast<u32>(QueueType::eCompute)] = m_queue_families[static_cast<u32>(QueueType::eGeneral)];
+
+				if (general_queue_count > 1) ++general_queue_create_info.queueCount;
+
+				compute_queue_create_info.queueCount = 0;
+			}
+
+			if (m_queue_families[static_cast<u32>(QueueType::eCopy)] == -1) {
+				const b8 use_compute_queue = compute_queue_create_info.queueCount != 0;
+					m_queue_families[static_cast<u32>(QueueType::eCopy)] =
+						use_compute_queue ? m_queue_families[static_cast<u32>(QueueType::eCompute)] : m_queue_families[static_cast<u32>(QueueType::eGeneral)];
+
+				if (use_compute_queue && compute_queue_count > 1) ++compute_queue_create_info.queueCount;
+				else if (!use_compute_queue && general_queue_count > 1) ++general_queue_create_info.queueCount;
+
+				copy_queue_create_info.queueCount = 0;
+			}
         }
 
         std::vector<vk::DeviceQueueCreateInfo> queues;
@@ -698,13 +719,52 @@ namespace DnmRHI::Vk {
 
         m_device = CreateDeviceManual(vp_functions, m_instance, m_physical_device, m_settings, m_vk_settings, queues, m_vk_device_features, GetAllocationCallbacks());
 
-        m_general_queue = m_device.getQueue(m_general_queue_family_index, 0);
-        m_compute_queue = compute_queue_create_info.queueCount ? m_device.getQueue(m_compute_queue_family_index, 0) : m_general_queue;
-        m_copy_queue = copy_queue_create_info.queueCount ? m_device.getQueue(m_copy_queue_family_index, 0) : m_compute_queue;
+        {
+			m_queues[static_cast<u32>(QueueType::eGeneral)] = m_device.getQueue(m_queue_families[static_cast<u32>(QueueType::eGeneral)], 0);
 
-        SET_DEBUG_NAME_VK_OBJECT(GetDevice(), m_general_queue, "general queue");
-        SET_DEBUG_NAME_VK_OBJECT(GetDevice(), m_compute_queue, "compute queue");
-        SET_DEBUG_NAME_VK_OBJECT(GetDevice(), m_copy_queue, "copy queue");
+			// if compute queue has own family
+			if (m_queue_families[static_cast<u32>(QueueType::eCompute)] != m_queue_families[static_cast<u32>(QueueType::eGeneral)]) {
+				m_queues[static_cast<u32>(QueueType::eCompute)] = m_device.getQueue(m_queue_families[static_cast<u32>(QueueType::eCompute)], 0);
+				// Terminal::Info(StringHelper::GetTypeName(this), "Compute queue uses own family, index: {} ", m_queue_families[static_cast<u32>(QueueType::eCompute)]);
+			}
+			else if (general_queue_create_info.queueCount > 1) {
+				m_queues[static_cast<u32>(QueueType::eCompute)] = m_device.getQueue(m_queue_families[static_cast<u32>(QueueType::eCompute)], 1);
+				// Terminal::Info(StringHelper::GetTypeName(this), "Compute queue uses graphics queue family");
+			}
+			else {
+				m_queues[static_cast<u32>(QueueType::eCompute)] = m_queues[static_cast<u32>(QueueType::eGeneral)];
+				// Terminal::Info(StringHelper::GetTypeName(this), "Compute queue same with graphics queue");
+			}
+
+			if (m_queue_families[static_cast<u32>(QueueType::eCopy)] == m_queue_families[static_cast<u32>(QueueType::eGeneral)]) {
+				if (general_queue_create_info.queueCount > 1) {
+					m_queues[static_cast<u32>(QueueType::eCopy)] = m_device.getQueue(m_queue_families[static_cast<u32>(QueueType::eGeneral)], 1);
+					// Terminal::Info(StringHelper::GetTypeName(this), "Transfer queue uses graphics queue family");
+				}
+				else {
+					m_queues[static_cast<u32>(QueueType::eCopy)] = m_queues[static_cast<u32>(QueueType::eGeneral)];
+					// Terminal::Info(StringHelper::GetTypeName(this), "Transfer queue same with graphics queue");
+				}
+			}
+			else if (m_queue_families[static_cast<u32>(QueueType::eCopy)] == m_queue_families[static_cast<u32>(QueueType::eCompute)]) {
+				if (compute_queue_create_info.queueCount > 1) {
+					m_queues[static_cast<u32>(QueueType::eCopy)] = m_device.getQueue(m_queue_families[static_cast<u32>(QueueType::eCompute)], 1);
+					// Terminal::Info(StringHelper::GetTypeName(this), "Transfer queue uses compute queue family");
+				}
+				else {
+					m_queues[static_cast<u32>(QueueType::eCopy)] = m_queues[static_cast<u32>(QueueType::eCompute)];
+					// Terminal::Info(StringHelper::GetTypeName(this), "Transfer queue same with compute queue");
+				}
+			}
+			else /* transfer queue has own family */ {
+				m_queues[static_cast<u32>(QueueType::eCopy)] = m_device.getQueue(m_queue_families[static_cast<u32>(QueueType::eCopy)], 0);
+				// Terminal::Info(StringHelper::GetTypeName(this), "Transfer queue uses own family, index: {} ", m_queue_families[static_cast<u32>(QueueType::eCopy)]);
+			}
+		}
+
+        SET_DEBUG_NAME_VK_OBJECT(GetDevice(), m_queues[static_cast<u32>(QueueType::eGeneral)], "general queue");
+        SET_DEBUG_NAME_VK_OBJECT(GetDevice(), m_queues[static_cast<u32>(QueueType::eCompute)], "compute queue");
+        SET_DEBUG_NAME_VK_OBJECT(GetDevice(), m_queues[static_cast<u32>(QueueType::eCopy)], "copy queue");
 
         {
             void *p_next{};
@@ -714,7 +774,7 @@ namespace DnmRHI::Vk {
 
             vk::PhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties{};
             ADD_P_NEXT(descriptor_buffer_properties);
-        
+
             vk::PhysicalDeviceProperties2 properties_chain{};
             ADD_P_NEXT(properties_chain);
 
@@ -722,8 +782,8 @@ namespace DnmRHI::Vk {
             m_physical_device.getProperties2(&properties_chain);
 
             m_vk_device_properties.resource_descriptor_size = std::max(
-                {descriptor_buffer_properties.storageImageDescriptorSize, 
-                    descriptor_buffer_properties.sampledImageDescriptorSize, 
+                {descriptor_buffer_properties.storageImageDescriptorSize,
+                    descriptor_buffer_properties.sampledImageDescriptorSize,
                     descriptor_buffer_properties.uniformBufferDescriptorSize});
             m_vk_device_properties.sampler_descriptor_size = descriptor_buffer_properties.samplerDescriptorSize;
 
@@ -758,9 +818,9 @@ namespace DnmRHI::Vk {
         create_info.vulkanApiVersion = VK_API_VERSION_1_4;
         create_info.pAllocationCallbacks = TO_C_CONST_PTR(*m_vk_alloc_callbacks);
         create_info.pDeviceMemoryCallbacks = m_vma_device_alloc_callbacks;
-        create_info.flags 
-            = VMA_ALLOCATOR_CREATE_EXTERNALLY_SYNCHRONIZED_BIT 
-            | VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT 
+        create_info.flags
+            = VMA_ALLOCATOR_CREATE_EXTERNALLY_SYNCHRONIZED_BIT
+            | VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT
             | VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT
             | VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE4_BIT
             | VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE5_BIT
@@ -770,12 +830,12 @@ namespace DnmRHI::Vk {
     }
 
     void Device::CreateDescriptorManager() noexcept {
-        m_descriptor_manager = 
-            m_vk_device_features.descriptor_heap ? 
-            static_cast<DescriptorManager *>(new DescriptorManagerHeap(*this)) 
+        m_descriptor_manager =
+            m_vk_device_features.descriptor_heap ?
+            static_cast<DescriptorManager *>(new DescriptorManagerHeap(*this))
             : static_cast<DescriptorManager *>(new DescriptorManagerBuffer(*this));
     }
-    
+
     ResultOr<DnmRHI::Buffer *> Device::ICreateBuffer(const BufferDesc &desc) noexcept {
         return new Buffer(*this, desc);
     }
@@ -800,7 +860,7 @@ namespace DnmRHI::Vk {
     ResultOr<DnmRHI::Shader *> Device::ICreateShader(const ShaderEntryPoint &entry_point) noexcept {
         return new Shader(*this, entry_point);
     }
-    
+
     Result Device::ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept {
         m_descriptor_manager->SetUniformBufferBindlessIndex(index, static_cast<Vk::Buffer &>(buffer), subresource);
         return Result::eSuccess;
@@ -834,14 +894,14 @@ namespace DnmRHI::Vk {
         for (const auto &desc : desc.signal_semaphores)
             vk_signal_semaphores.emplace_back(
                 static_cast<const Vk::Semaphore *>(desc.semaphore)->GetSemaphore(),
-                desc.value, 
+                desc.value,
                 vk::PipelineStageFlagBits2::eAllCommands
             );
 
         for (const auto &desc : desc.wait_semaphores)
             vk_wait_semaphores.emplace_back(
                 static_cast<const Vk::Semaphore *>(desc.semaphore)->GetSemaphore(),
-                desc.value, 
+                desc.value,
                 vk::PipelineStageFlagBits2::eAllCommands
             );
 
@@ -871,11 +931,11 @@ namespace DnmRHI::Vk {
 
         switch (queue_type) {
             case QueueType::eGeneral:
-                m_general_queue.submit2(submit_info); break;
+                m_queues[static_cast<u32>(QueueType::eGeneral)].submit2(submit_info); break;
             case QueueType::eCompute:
-                m_compute_queue.submit2(submit_info); break;
+                m_queues[static_cast<u32>(QueueType::eCompute)].submit2(submit_info); break;
             case QueueType::eCopy:
-                m_copy_queue.submit2(submit_info); break;
+                m_queues[static_cast<u32>(QueueType::eCopy)].submit2(submit_info); break;
             default: std::unreachable();
         }
 
@@ -899,7 +959,7 @@ namespace DnmRHI::Vk {
                 .setValues(values)
                 .setFlags(desc.any ? vk::SemaphoreWaitFlagBits::eAny : vk::SemaphoreWaitFlagBits{}),
             desc.timeout);
-        
+
         return result == vk::Result::eTimeout ? Result::eTimeout : Result::eSuccess;
     }
 
@@ -918,7 +978,7 @@ namespace DnmRHI::Vk {
                 ;
 
         // TODO: handle result
-        [[maybe_unused]] const auto result = m_general_queue.presentKHR(present_info);
+        [[maybe_unused]] const auto result = m_queues[static_cast<u32>(QueueType::eGeneral)].presentKHR(present_info);
 
         return Result::eSuccess;
     }

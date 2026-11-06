@@ -147,6 +147,7 @@ namespace DnmRHI {
         virtual ~Device();
 
         Result Init() noexcept;
+        Result WaitIdle() noexcept;
 
         Result SetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept;
         Result SetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept;
@@ -184,6 +185,7 @@ namespace DnmRHI {
         [[nodiscard]] auto IsQualcomm() const noexcept { return m_device_info.properties.vendor == GpuVendor::eQualcomm; }
     protected:
         virtual Result IInit() noexcept = 0;
+        virtual Result IWaitIdle() noexcept = 0;
 
         [[nodiscard]] virtual ResultOr<DnmRHI::Buffer *> ICreateBuffer(const BufferDesc &desc) noexcept = 0;
         [[nodiscard]] virtual ResultOr<DnmRHI::Image *> ICreateImage(const ImageDesc &desc) noexcept = 0;

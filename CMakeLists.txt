@@ -51,7 +51,7 @@ add_library(DnmRHI::DnmRHI ALIAS DnmRHI)
 target_include_directories(DnmRHI PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/Include
     ${CMAKE_CURRENT_SOURCE_DIR}/External
-    $ENV{VULKAN_SDK}/include
+    $ENV{VULKAN_SDK}/Include
 )
 
 target_link_libraries(DnmRHI PRIVATE
