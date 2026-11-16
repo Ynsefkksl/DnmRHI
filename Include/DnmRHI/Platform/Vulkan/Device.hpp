@@ -78,7 +78,6 @@ namespace DnmRHI::Vk {
         [[nodiscard]] virtual ResultOr<DnmRHI::ComputePipeline *> ICreateComputePipeline(const ComputePipelineDesc &desc) noexcept override;
         [[nodiscard]] virtual ResultOr<DnmRHI::Semaphore *> ICreateSemaphore(const SemaphoreDesc &desc) noexcept override;
         [[nodiscard]] virtual ResultOr<DnmRHI::Swapchain *> ICreateSwapchain(const SwapchainDesc &desc) noexcept override;
-        [[nodiscard]] virtual ResultOr<DnmRHI::Shader *> ICreateShader(const ShaderEntryPoint &entry_point) noexcept override;
 
         virtual Result ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept override;
         virtual Result ISetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept override;
@@ -88,7 +87,8 @@ namespace DnmRHI::Vk {
         virtual Result ISubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept override;
         virtual Result IWaitSemaphore(const WaitSemaphoreDesc &desc) noexcept override;
         virtual Result IPresent(const PresentDesc &desc) noexcept override;
-        [[nodiscard]] virtual slang::ISession *CreateCompilerSession(slang::IGlobalSession *global_session) noexcept override;
+
+        virtual u32 IShaderHeaderMagic() const noexcept override { return 0x45869422; }
 
         [[nodiscard]] auto GetInstance() const noexcept { return m_instance; }
         [[nodiscard]] auto GetPhysicalDevice() const noexcept { return m_physical_device; }
@@ -126,6 +126,7 @@ namespace DnmRHI::Vk {
         void CreateDevice(const VpFunctions &vp_functions) noexcept;
         void CreateVmaAllocator() noexcept;
         void CreateDescriptorManager() noexcept;
+        void CreateSlangSession() noexcept;
 
         vk::detail::DynamicLoader m_dl;
         vk::Instance m_instance;

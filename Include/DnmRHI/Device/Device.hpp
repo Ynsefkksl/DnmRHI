@@ -1,10 +1,12 @@
 #pragma once
 
 #include <DnmRHI/Common/Subresource.hpp>
-#include <DnmRHI/Shader/EntryPoint.hpp>
+#include <DnmRHI/Common/ShaderStages.hpp>
 #include <functional>
 #include <span>
 #include <array>
+#include <string_view>
+#include <string>
 
 // TODO: temp
 namespace slang {
@@ -138,11 +140,6 @@ namespace DnmRHI {
         Result Init() noexcept;
         Result WaitIdle() noexcept;
 
-        Result SetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept;
-        Result SetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept;
-        Result SetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept;
-        Result SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept;
-
         [[nodiscard]] ResultOr<Buffer *> CreateBuffer(const BufferDesc &desc) noexcept;
         [[nodiscard]] ResultOr<Image *> CreateImage(const ImageDesc &desc) noexcept;
         [[nodiscard]] ResultOr<CommandBuffer *> CreateCommandBuffer(const CommandBufferDesc &desc) noexcept;
@@ -150,19 +147,25 @@ namespace DnmRHI {
         [[nodiscard]] ResultOr<ComputePipeline *> CreateComputePipeline(const ComputePipelineDesc &desc) noexcept;
         [[nodiscard]] ResultOr<Semaphore *> CreateSemaphore(const SemaphoreDesc &desc) noexcept;
         [[nodiscard]] ResultOr<Swapchain *> CreateSwapchain(const SwapchainDesc &desc) noexcept;
-        // TODO: remove shader object
-        [[nodiscard]] ResultOr<Shader *> CreateShader(const ShaderDesc &desc) noexcept;
+
+        [[nodiscard]] ResultOr<std::vector<u8>> CompileShader(const ShaderDesc &desc) noexcept;
+
+        Result SetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept;
+        Result SetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept;
+        Result SetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept;
+        Result SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept;
 
         Result SubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept;
         Result WaitSemaphore(const WaitSemaphoreDesc &desc) noexcept;
         Result Present(const PresentDesc &desc) noexcept;
+
+        u32 ShaderHeaderMagic() const noexcept { return IShaderHeaderMagic(); }
 
         [[nodiscard]] const auto &GetFeatures() const noexcept { return m_device_info.features; }
         [[nodiscard]] const auto &GetProperties() const noexcept { return m_device_info.properties; }
         [[nodiscard]] const auto &GetDeviceInfo() const noexcept { return m_device_info; }
         [[nodiscard]] auto GetSettings() const noexcept { return m_settings; }
 
-        [[nodiscard]] auto *GetShaderCompiler() const noexcept { return m_shader_compiler; }
         void Message(MessageSeverity severty, MessageCatagory catagory, MessageID message_id, std::string_view message) {
             if (m_settings.debug_callback) m_settings.debug_callback(severty, catagory, message_id, message);
         }
@@ -177,7 +180,6 @@ namespace DnmRHI {
         [[nodiscard]] virtual ResultOr<DnmRHI::ComputePipeline *> ICreateComputePipeline(const ComputePipelineDesc &desc) noexcept = 0;
         [[nodiscard]] virtual ResultOr<DnmRHI::Semaphore *> ICreateSemaphore(const SemaphoreDesc &desc) noexcept = 0;
         [[nodiscard]] virtual ResultOr<DnmRHI::Swapchain *> ICreateSwapchain(const SwapchainDesc &desc) noexcept = 0;
-        [[nodiscard]] virtual ResultOr<DnmRHI::Shader *> ICreateShader(const ShaderEntryPoint &entry_point) noexcept = 0;
 
         virtual Result ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept = 0;
         virtual Result ISetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept = 0;
@@ -187,11 +189,15 @@ namespace DnmRHI {
         virtual Result ISubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept = 0;
         virtual Result IWaitSemaphore(const WaitSemaphoreDesc &desc) noexcept = 0;
         virtual Result IPresent(const PresentDesc &desc) noexcept = 0;
-        [[nodiscard]] virtual slang::ISession *CreateCompilerSession(slang::IGlobalSession *global_session) noexcept = 0;
+
+        virtual u32 IShaderHeaderMagic() const noexcept = 0;
 
         DeviceInfo m_device_info{};
         DeviceSettings m_settings{};
         ShaderCompiler *m_shader_compiler{};
+
+        slang::ISession *m_compiler_session;
+        slang::IGlobalSession *m_compiler_global_session;
 
         friend ShaderCompiler;
     };

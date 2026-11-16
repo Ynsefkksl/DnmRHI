@@ -1,19 +1,22 @@
 #include <DnmRHI/Platform/Vulkan/ComputePipeline.hpp>
 #include <DnmRHI/Platform/Vulkan/DescriptorManager.hpp>
-#include <DnmRHI/Platform/Vulkan/Shader.hpp>
+#include <DnmRHI/Shader/ByteCodeHeader.hpp>
 
 namespace DnmRHI::Vk {
     ComputePipeline::ComputePipeline(Vk::Device &device, const ComputePipelineDesc &desc) : DnmRHI::ComputePipeline(device, desc)  {
+        const auto *shader_header = reinterpret_cast<const DnmRHI::ShaderByteCodeHeader *>(desc.shader_byte_code.data());
+        const auto shader_byte_code = shader_header->GetShaderByteCode(desc.shader_byte_code);
+
         const auto shader_module
             = vk::ShaderModuleCreateInfo{}
-                .setPCode(reinterpret_cast<const u32 *>(desc.compute_shader->GetEntryPointInfo().byte_codes.data()))
-                .setCodeSize(desc.compute_shader->GetEntryPointInfo().byte_codes.size())
+                .setPCode(reinterpret_cast<const u32 *>(shader_byte_code.data()))
+                .setCodeSize(shader_byte_code.size())
                 ;
 
         const auto shader_stage_create_info 
             = vk::PipelineShaderStageCreateInfo{}
                 .setStage(vk::ShaderStageFlagBits::eCompute)
-                .setPName(GetVkDevice.GetVulkanSettings().generate_spirv_code_via_glsl ? "main" : desc.compute_shader->GetEntryPointInfo().name.c_str())
+                .setPName(shader_header->GetShaderEntryPointName().data())
                 .setPNext(&shader_module)
                 ;
 

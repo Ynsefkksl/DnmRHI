@@ -44,7 +44,6 @@
 #include <DnmRHI/Semaphore/Semaphore.hpp>
 #include <DnmRHI/Semaphore/Desc.hpp>
 
-#include <DnmRHI/Shader/Shader.hpp>
 #include <DnmRHI/Shader/Desc.hpp>
 
 #include <DnmRHI/Swapchain/Swapchain.hpp>

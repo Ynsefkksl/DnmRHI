@@ -159,14 +159,13 @@ namespace DnmRHI {
 
     struct GraphicsPipelineDesc {
         std::string name;
-        std::vector<Shader *> shaders;
+        std::span<std::span<const u8>> shaders;
         RasterizationState rasterization_state;
         ColorOutputState color_output_state;
         DepthStencilState depth_stencil_state;
         
         constexpr auto &SetName(std::string_view name) noexcept { this->name = name; return *this; }
-        constexpr auto &SetShaders(std::span<Shader * const> shaders) noexcept { this->shaders = std::vector<Shader *>(shaders.begin(), shaders.end()); return *this; }
-        constexpr auto &SetShaders(std::initializer_list<Shader *> shaders) noexcept { this->shaders = std::vector<Shader *>(shaders); return *this; }
+        constexpr auto &SetShaders(std::span<std::span<const u8>> shader_byte_codes) noexcept { this->shaders = shader_byte_codes; return *this; }
         constexpr auto &SetRasterizationState(const RasterizationState &state) noexcept { this->rasterization_state = state; return *this; }
         constexpr auto &SetColorOutputState(const ColorOutputState &state) noexcept { this->color_output_state = state; return *this; }
         constexpr auto &SetDepthStencilState(const DepthStencilState &state) noexcept { this->depth_stencil_state = state; return *this; }

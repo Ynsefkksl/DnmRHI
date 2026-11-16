@@ -1,10 +1,8 @@
-#include "DnmRHI/Common/FormatInfo.hpp"
+#include <DnmRHI/Common/FormatInfo.hpp>
 #include <DnmRHI/Device/Device.hpp>
 #include <DnmRHI/Device/D3D12Settings.hpp>
 #include <DnmRHI/Device/VulkanSettings.hpp>
-#include <DnmRHI/Shader/Compiler.hpp>
 #include <DnmRHI/Shader/Desc.hpp>
-
 #include <DnmRHI/Buffer/Buffer.hpp>
 #include <DnmRHI/Image/Image.hpp>
 #include <DnmRHI/CommandBuffer/CommandBuffer.hpp>
@@ -12,7 +10,11 @@
 #include <DnmRHI/ComputePipeline/ComputePipeline.hpp>
 #include <DnmRHI/Semaphore/Semaphore.hpp>
 #include <DnmRHI/Swapchain/Swapchain.hpp>
-#include <DnmRHI/Shader/Shader.hpp>
+#include <DnmRHI/Shader/ByteCodeHeader.hpp>
+
+#include <slang/slang.h>
+#include <slang/slang-com-helper.h>
+#include <slang/slang-com-ptr.h>
 
 namespace DnmRHI {
     #if !defined(DnmRHI_Backend_D3D12)
@@ -34,6 +36,23 @@ namespace DnmRHI {
             return std::unexpected(Result::eInvalidParameter);
         }
     #endif
+
+    static constexpr ShaderStageFlagBit ToSlangShaderStageFlagBits(SlangStage stage) noexcept {
+        switch (stage) {
+            case SLANG_STAGE_VERTEX:        return ShaderStageFlagBit::eVertex;
+            case SLANG_STAGE_FRAGMENT:      return ShaderStageFlagBit::eFragment;
+            case SLANG_STAGE_COMPUTE:       return ShaderStageFlagBit::eCompute;
+            case SLANG_STAGE_MESH:          return ShaderStageFlagBit::eMesh;
+            case SLANG_STAGE_AMPLIFICATION: return ShaderStageFlagBit::eTask;
+            case SLANG_STAGE_ANY_HIT:       return ShaderStageFlagBit::eAnyHit;
+            case SLANG_STAGE_CALLABLE:      return ShaderStageFlagBit::eCallable;
+            case SLANG_STAGE_CLOSEST_HIT:   return ShaderStageFlagBit::eClosestHit;
+            case SLANG_STAGE_INTERSECTION:  return ShaderStageFlagBit::eIntersection;
+            case SLANG_STAGE_MISS:          return ShaderStageFlagBit::eMiss;
+            case SLANG_STAGE_RAY_GENERATION:return ShaderStageFlagBit::eRaygen;
+            default:                        return ShaderStageFlagBit{};
+        }
+    }
 
     // TODO: maybe these have own file
     static constexpr b8 CheckDesc(Device &device, const BufferDesc &desc) noexcept {
@@ -103,7 +122,7 @@ namespace DnmRHI {
     static constexpr b8 CheckDesc(Device &device, const ComputePipelineDesc &desc) noexcept {
         b8 is_valid = true;
 
-        if (!desc.compute_shader) {
+        if (desc.shader_byte_code.empty()) {
             is_valid = false;
         }
         
@@ -130,22 +149,32 @@ namespace DnmRHI {
             }
         }
 
-        // TODO: shader input outputs is valid
         {
             ShaderStageFlags stages;
 
-            for (const auto *shader : desc.shaders) {
-                if (!shader) {
+            for (const auto shader : desc.shaders) {
+                if (shader.empty()) {
                     is_valid = false;
                     break;
                 }
 
-                if (stages.Has(shader->GetEntryPointInfo().flag_bit)) {
+                const auto *shader_header = reinterpret_cast<const DnmRHI::ShaderByteCodeHeader *>(shader.data());
+                if (shader_header->magic != device.ShaderHeaderMagic()) {
                     is_valid = false;
                     break;
                 }
 
-                stages |= shader->GetEntryPointInfo().flag_bit;
+                if (stages.Has(shader_header->entry_point_name_length == 0)) {
+                    is_valid = false;
+                    break;
+                }
+
+                if (stages.Has(shader_header->stage)) {
+                    is_valid = false;
+                    break;
+                }
+
+                stages |= shader_header->stage;
             }
 
             if (!(stages.Has(ShaderStageFlagBit::eVertex | ShaderStageFlagBit::eFragment)
@@ -182,7 +211,15 @@ namespace DnmRHI {
     static constexpr b8 CheckDesc(Device &device, const ShaderDesc &desc) noexcept {
         b8 is_valid = true;
         
-        if (!std::filesystem::exists(desc.file)) {
+        if (desc.byte_code.empty()) {
+            is_valid = false;
+        }
+
+        if (desc.entry_point.empty()) {
+            is_valid = false;
+        }
+
+        if (desc.module_name.empty()) {
             is_valid = false;
         }
 
@@ -271,7 +308,8 @@ namespace DnmRHI {
     }
 
     Device::~Device() {
-        delete m_shader_compiler;
+        m_compiler_global_session->release();
+        m_compiler_session->release();
     }
 
     Result Device::Init() noexcept {
@@ -281,7 +319,6 @@ namespace DnmRHI {
                 return Result::eInvalidUsage;
         }
 
-        m_shader_compiler = new ShaderCompiler(*this); 
         return IInit(); 
     }
 
@@ -345,19 +382,93 @@ namespace DnmRHI {
         return ICreateSwapchain(desc);
     }
 
-    ResultOr<Shader *> Device::CreateShader(const ShaderDesc &desc) noexcept {
-        if (GetSettings().rhi_validation) {
-            if (!CheckDesc(*this, desc))
-                return std::unexpected(Result::eInvalidParameter);
+    ResultOr<std::vector<u8>> Device::CompileShader(const ShaderDesc &desc) noexcept {
+        Slang::ComPtr<slang::IModule> slang_module;
+
+        {
+            Slang::ComPtr<slang::IBlob> diagnostics_blob;
+            slang_module = m_compiler_session->loadModuleFromSourceString(
+                desc.module_name.data(), 
+                nullptr, 
+                reinterpret_cast<const char*>(desc.byte_code.data()), 
+                diagnostics_blob.writeRef());
+            if (diagnostics_blob) {
+                // TODO: fix massage ids
+                Message(!slang_module ? MessageSeverity::eError : MessageSeverity::eWarning, MessageCatagory::eShaderCompiler, 
+                    MessageID{0}, std::string_view{static_cast<const char *>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()});
+                if (!slang_module) {
+                    return std::unexpected(Result::eCompileError);
+                }
+            }
         }
 
-        const auto result_or_entry_point = m_shader_compiler->GetEntryPointBinary(desc.file, desc.entry_point);
+        Slang::ComPtr<slang::IEntryPoint> entry_point;
+        slang_module->findEntryPointByName(desc.entry_point.data(), entry_point.writeRef());
 
-        if (!result_or_entry_point.has_value()) {
-            return std::unexpected(result_or_entry_point.error());
+        slang::IComponentType *component_types[] = {
+            slang_module,
+            entry_point
+        };
+
+        Slang::ComPtr<slang::IComponentType> composed_program;
+        {
+            Slang::ComPtr<slang::IBlob> diagnostics_blob;
+            
+            m_compiler_session->createCompositeComponentType(
+                component_types,
+                2,
+                composed_program.writeRef(),
+                diagnostics_blob.writeRef());
+
+            if (diagnostics_blob) {
+                // TODO: fix massage ids
+                Message(!composed_program ? MessageSeverity::eError : MessageSeverity::eWarning, MessageCatagory::eShaderCompiler, 
+                    MessageID{0}, std::string_view{static_cast<const char *>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()});
+                if (!composed_program) {
+                    return std::unexpected(Result::eCompileError);
+                }
+            }
         }
 
-        return ICreateShader(*result_or_entry_point.value());
+        Slang::ComPtr<slang::IComponentType> linked_program;
+        {
+            Slang::ComPtr<slang::IBlob> diagnostics_blob;
+            SlangResult result = composed_program->link(
+                linked_program.writeRef(),
+                diagnostics_blob.writeRef());
+
+            if (diagnostics_blob) {
+                // TODO: fix massage ids
+                Message(!linked_program ? MessageSeverity::eError : MessageSeverity::eWarning, MessageCatagory::eShaderCompiler, 
+                    MessageID{0}, std::string_view{static_cast<const char *>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()});
+                if (!linked_program) {
+                    return std::unexpected(Result::eCompileError);
+                }
+            }
+        }
+
+        auto *entry_point_refl = linked_program->getLayout()->findEntryPointByName(desc.entry_point.data());
+        // for mangling
+        u32 entry_point_name_size = strlen(entry_point_refl->getName());
+
+        Slang::ComPtr<slang::IBlob> code_blob;
+        linked_program->getEntryPointCode(0, 0, code_blob.writeRef());
+
+        std::vector<u8> out(code_blob->getBufferSize() + sizeof(ShaderByteCodeHeader) + entry_point_name_size + 1 /* for null terminator */);
+
+        auto *shader_header = reinterpret_cast<ShaderByteCodeHeader *>(out.data());
+        shader_header->magic = ShaderHeaderMagic();
+        shader_header->stage = ToSlangShaderStageFlagBits(entry_point_refl->getStage());
+        shader_header->entry_point_name_length = entry_point_name_size;
+
+        std::memcpy(shader_header->entry_point_name, entry_point_refl->getName(), entry_point_name_size);
+        // for null terminator
+        std::memcpy(shader_header->entry_point_name + entry_point_name_size, 0, 1);
+
+        const u32 total_header_size = sizeof(ShaderByteCodeHeader) + entry_point_name_size + 1 /* for null terminator*/;
+        std::memcpy(out.data() + total_header_size, code_blob->getBufferPointer(), code_blob->getBufferSize());
+
+        return out;
     }
 
     Result Device::SetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept {

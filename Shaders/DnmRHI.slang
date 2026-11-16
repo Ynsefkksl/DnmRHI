@@ -95,6 +95,13 @@ T GetBindless<T>(uint index)
             else
                 return __DnmRHI_SpirV_Resource_Set__[index].asOpaqueDescriptor<T>();
         }
+        case hlsl:
+        {
+            if (T.kind == DescriptorKind.Sampler)
+                return __loadSamplerDescriptorFromHeap<T>(index);
+            else
+                return __loadResourceDescriptorFromHeap<T>(index);
+        }
     }
 }
 

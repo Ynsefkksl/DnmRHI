@@ -5,8 +5,11 @@
 #include <DnmRHI/Platform/Vulkan/Semaphore.hpp>
 #include <DnmRHI/Platform/Vulkan/CommandBuffer.hpp>
 #include <DnmRHI/Platform/Vulkan/Swapchain.hpp>
-#include <DnmRHI/Platform/Vulkan/Shader.hpp>
 #include <vulkan/vulkan_profiles.h>
+
+#include <slang/slang.h>
+#include <slang/slang-com-ptr.h>
+#include <slang/slang-com-helper.h>
 
 #include <set>
 #include <vector>
@@ -827,6 +830,100 @@ namespace DnmRHI::Vk {
             : static_cast<DescriptorManager *>(new DescriptorManagerBuffer(*this));
     }
 
+    void Device::CreateSlangSession() noexcept {
+        slang::createGlobalSession(&m_compiler_global_session);
+
+        std::vector<slang::CompilerOptionEntry> options;
+
+        // TODO: descriptor offsets
+        options.emplace_back(slang::CompilerOptionEntry {
+            slang::CompilerOptionName::Optimization,
+            { slang::CompilerOptionValueKind::Int, 3 * !GetSettings().shader_debug }
+        });
+        options.emplace_back(slang::CompilerOptionEntry {
+            slang::CompilerOptionName::EmitSpirvDirectly,
+            { slang::CompilerOptionValueKind::Int, !m_vk_settings.generate_spirv_code_via_glsl }
+        });
+        options.emplace_back(slang::CompilerOptionEntry {
+            slang::CompilerOptionName::EmitSpirvViaGLSL,
+            { slang::CompilerOptionValueKind::Int, m_vk_settings.generate_spirv_code_via_glsl }
+        });
+        options.emplace_back(slang::CompilerOptionEntry {
+            slang::CompilerOptionName::MatrixLayoutColumn,
+            { slang::CompilerOptionValueKind::Int, 1 }
+        });
+        options.emplace_back(slang::CompilerOptionEntry {
+            slang::CompilerOptionName::DebugInformation,
+            { slang::CompilerOptionValueKind::Int, 
+                static_cast<int32_t>(GetSettings().shader_debug ? SLANG_DEBUG_INFO_LEVEL_MAXIMAL : SLANG_DEBUG_INFO_LEVEL_NONE) }
+        });
+        options.emplace_back(slang::CompilerOptionEntry {
+            slang::CompilerOptionName::Capability,
+            { slang::CompilerOptionValueKind::Int, m_compiler_global_session->findCapability("vk_mem_model") }
+        });
+        options.emplace_back(slang::CompilerOptionEntry {
+            slang::CompilerOptionName::Capability,
+            { slang::CompilerOptionValueKind::Int, m_compiler_global_session->findCapability("spvVulkanMemoryModelKHR") }
+        });
+        options.emplace_back(slang::CompilerOptionEntry {
+            slang::CompilerOptionName::Capability,
+            { slang::CompilerOptionValueKind::Int, m_compiler_global_session->findCapability("spvVulkanMemoryModelDeviceScopeKHR") }
+        });
+        options.emplace_back(slang::CompilerOptionEntry {
+            slang::CompilerOptionName::Capability,
+            { slang::CompilerOptionValueKind::Int, m_compiler_global_session->findCapability("spvDemoteToHelperInvocation") }
+        });
+        if (GetSettings().shader_debug) {
+            options.emplace_back(slang::CompilerOptionEntry {
+                slang::CompilerOptionName::DebugInformation,
+                { slang::CompilerOptionValueKind::Int, SLANG_DEBUG_INFO_LEVEL_MAXIMAL }
+            });
+            options.emplace_back(slang::CompilerOptionEntry {
+                slang::CompilerOptionName::LineDirectiveMode,
+                { slang::CompilerOptionValueKind::Int, SLANG_LINE_DIRECTIVE_MODE_NONE }
+            });
+        }
+        options.emplace_back(slang::CompilerOptionEntry {
+            slang::CompilerOptionName::GLSLForceScalarLayout,
+            { slang::CompilerOptionValueKind::Int, 1 }
+        });
+        if (m_vk_device_features.descriptor_heap) {
+            options.emplace_back(slang::CompilerOptionEntry {
+                slang::CompilerOptionName::SPIRVResourceHeapStride,
+                { slang::CompilerOptionValueKind::Int, static_cast<int32_t>(m_vk_device_properties.resource_descriptor_size_for_heap) }
+            });
+
+            options.emplace_back(slang::CompilerOptionEntry {
+                slang::CompilerOptionName::SPIRVSamplerHeapStride,
+                { slang::CompilerOptionValueKind::Int, static_cast<int32_t>(m_vk_device_properties.sampler_descriptor_size_for_heap) }
+            });
+        }
+        if (m_device_info.features.shader_stencil_export) {
+            options.emplace_back(slang::CompilerOptionEntry {
+                slang::CompilerOptionName::Capability,
+                { slang::CompilerOptionValueKind::Int, m_compiler_global_session->findCapability("spvStencilExportEXT") }
+            });
+        }
+
+        slang::TargetDesc target_desc{};
+        target_desc.compilerOptionEntries = options.data();
+        target_desc.compilerOptionEntryCount = options.size();
+        target_desc.forceGLSLScalarBufferLayout = true;
+        target_desc.format = SLANG_SPIRV;
+        target_desc.profile = m_compiler_global_session->findProfile("sm_6_7");
+
+        const auto str_subgroup_size = std::to_string(m_device_info.properties.subgroup_size);
+        const slang::PreprocessorMacroDesc macro{"SUBGROUP_SIZE", str_subgroup_size.c_str()}; 
+
+        slang::SessionDesc session_desc{};
+        session_desc.preprocessorMacros = &macro; 
+        session_desc.preprocessorMacroCount = 1;
+        session_desc.targetCount = 1;
+        session_desc.targets = &target_desc;
+
+        m_compiler_global_session->createSession(session_desc, &m_compiler_session);
+    }
+
     ResultOr<DnmRHI::Buffer *> Device::ICreateBuffer(const BufferDesc &desc) noexcept {
         return new Buffer(*this, desc);
     }
@@ -847,9 +944,6 @@ namespace DnmRHI::Vk {
     }
     ResultOr<DnmRHI::Swapchain *> Device::ICreateSwapchain(const SwapchainDesc &desc) noexcept {
         return new Swapchain(*this, desc);
-    }
-    ResultOr<DnmRHI::Shader *> Device::ICreateShader(const ShaderEntryPoint &entry_point) noexcept {
-        return new Shader(*this, entry_point);
     }
 
     Result Device::ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept {

@@ -1,7 +1,7 @@
 #include <DnmRHI/Platform/Vulkan/GraphicsPipeline.hpp>
 #include <DnmRHI/Platform/Vulkan/DescriptorManager.hpp>
-#include <DnmRHI/Platform/Vulkan/Shader.hpp>
 #include <DnmRHI/Platform/Vulkan/ToVk.hpp>
+#include <DnmRHI/Shader/ByteCodeHeader.hpp>
 
 namespace DnmRHI::Vk {
     GraphicsPipeline::GraphicsPipeline(Vk::Device &device, const GraphicsPipelineDesc &desc) : DnmRHI::GraphicsPipeline(device, desc) {
@@ -10,18 +10,21 @@ namespace DnmRHI::Vk {
         shader_stages.reserve(desc.shaders.size());
         shader_modules.reserve(desc.shaders.size());
 
-        for (const auto *shader : desc.shaders) {
+        for (const auto shader : desc.shaders) {
+            const auto *shader_header = reinterpret_cast<const DnmRHI::ShaderByteCodeHeader *>(shader.data());
+            const auto shader_byte_code = shader_header->GetShaderByteCode(shader);
+
             const auto shader_module 
                 = vk::ShaderModuleCreateInfo{}
-                    .setPCode(reinterpret_cast<const u32 *>(shader->GetEntryPointInfo().byte_codes.data()))
-                    .setCodeSize(shader->GetEntryPointInfo().byte_codes.size())
+                    .setPCode(reinterpret_cast<const u32 *>(shader_byte_code.data()))
+                    .setCodeSize(shader_byte_code.size())
                     ;
 
             shader_stages.emplace_back(
                 vk::PipelineShaderStageCreateFlags{},
-                To_Vk(shader->GetEntryPointInfo().flag_bit), 
+                To_Vk(shader_header->stage), 
                 VK_NULL_HANDLE,
-                GetVkDevice.GetVulkanSettings().generate_spirv_code_via_glsl ? "main" : shader->GetEntryPointInfo().name.c_str(), 
+                shader_header->GetShaderEntryPointName().data(), 
                 nullptr, 
                 &shader_module);
         }
