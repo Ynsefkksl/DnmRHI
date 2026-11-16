@@ -112,7 +112,7 @@ typealias i64 = int64_t;
 
 // TODO: this is bad
 typealias int_in_out =
-#ifdef IN_OUT_16
+#ifdef INPUT_OUTPUT_16
     i16;
 #else
     i32;
@@ -141,7 +141,7 @@ typealias u64 = uint64_t;
 
 // TODO: this is bad
 typealias uint_in_out =
-#ifdef IN_OUT_16
+#ifdef INPUT_OUTPUT_16
     u16;
 #else
     u32;
@@ -170,7 +170,7 @@ typealias fp = f32;
 
 // TODO: this is bad
 typealias fp_in_out =
-#ifdef IN_OUT_16
+#ifdef INPUT_OUTPUT_16
     f16;
 #else
     f32;

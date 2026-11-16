@@ -835,7 +835,6 @@ namespace DnmRHI::Vk {
 
         std::vector<slang::CompilerOptionEntry> options;
 
-        // TODO: descriptor offsets
         options.emplace_back(slang::CompilerOptionEntry {
             slang::CompilerOptionName::Optimization,
             { slang::CompilerOptionValueKind::Int, 3 * !GetSettings().shader_debug }
@@ -912,12 +911,14 @@ namespace DnmRHI::Vk {
         target_desc.format = SLANG_SPIRV;
         target_desc.profile = m_compiler_global_session->findProfile("sm_6_7");
 
-        const auto str_subgroup_size = std::to_string(m_device_info.properties.subgroup_size);
-        const slang::PreprocessorMacroDesc macro{"SUBGROUP_SIZE", str_subgroup_size.c_str()}; 
+        std::vector<slang::PreprocessorMacroDesc> macros;
+        if (m_vk_device_features.input_output_16) {
+            macros.push_back(slang::PreprocessorMacroDesc{"INPUT_OUTPUT_16", "1"});
+        }
 
         slang::SessionDesc session_desc{};
-        session_desc.preprocessorMacros = &macro; 
-        session_desc.preprocessorMacroCount = 1;
+        session_desc.preprocessorMacros = macros.data();
+        session_desc.preprocessorMacroCount = macros.size();
         session_desc.targetCount = 1;
         session_desc.targets = &target_desc;
 
