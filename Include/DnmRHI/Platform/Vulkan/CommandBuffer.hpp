@@ -69,11 +69,12 @@ namespace DnmRHI::Vk {
 
         [[nodiscard]] auto GetUsedSwapchainImages() const noexcept { return std::span(m_used_swapchain_images); }
     private:
-        vk::ImageLayout GetImageLayout(const Vk::Image *image, bool stencil = false) const noexcept {
+        vk::ImageLayout GetImageLayout(const DnmRHI::Image *image, bool stencil = false) const noexcept {
+            const Vk::Image *vk_image = static_cast<const Vk::Image *>(image);
             if (image->GetDesc().flags.Has(ImageFlagBit::eStorage)) return vk::ImageLayout::eGeneral;
-            if (m_image_layouts.contains(image))
-                return m_image_layouts.at(image)[stencil];
-            return image->c_DefaultLayout;
+            if (m_image_layouts.contains(vk_image))
+                return m_image_layouts.at(vk_image)[stencil];
+            return vk_image->c_DefaultLayout;
         }
 
         void SetImageLayout(const Vk::Image *image, vk::ImageLayout layout, bool stencil = false) noexcept {

@@ -65,10 +65,9 @@ namespace DnmRHI {
     class ComputePipeline;
     class Semaphore;
     class Swapchain;
+    class ImageView;
     class Object;
-    class Shader;
     class Resource;
-    class ShaderCompiler;
 
     struct ImageDesc;
     struct BufferDesc;
@@ -78,9 +77,8 @@ namespace DnmRHI {
     struct ComputePipelineDesc;
     struct SemaphoreDesc;
     struct SwapchainDesc;
-    struct ObjectDesc;
+    struct ImageViewDesc;
     struct ShaderDesc;
-    struct ResourceDesc;
 
     struct VulkanSettings;
     struct D3D12Settings;
@@ -104,10 +102,10 @@ namespace DnmRHI {
         eRayTracingPipeline,
         eBuffer,
         eImage,
+        eImageView,
         eCommandBuffer,
         eSemaphore,
         eSwapchain,
-        eShader,
         Count
     };
 

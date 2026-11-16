@@ -2,7 +2,6 @@
 
 #include <DnmRHI/Platform/Vulkan/Device.hpp>
 #include <DnmRHI/Platform/Vulkan/Buffer.hpp>
-#include <DnmRHI/Platform/Vulkan/Image.hpp>
 
 namespace DnmRHI::Vk {
     class DescriptorManager {
@@ -10,10 +9,10 @@ namespace DnmRHI::Vk {
         explicit DescriptorManager(Vk::Device &device) noexcept : m_device(device) {}
         virtual ~DescriptorManager() = default;
 
-        virtual void SetUniformBufferBindlessIndex(u32 index, Buffer &buffer, BufferSubresource subresource) = 0;
-        virtual void SetSampledImageBindlessIndex(u32 index, Image &image, ImageSubresource subresource) = 0;
-        virtual void SetStorageImageBindlessIndex(u32 index, Image &image, ImageSubresource subresource) = 0;
-        virtual void SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) = 0;
+        virtual void WriteUniformBufferDescriptor(u32 index, Buffer &buffer, BufferSubresource subresource) = 0;
+        virtual void WriteSampledImageDescriptor(u32 index, ImageView &image) = 0;
+        virtual void WriteStorageImageDescriptor(u32 index, ImageView &image) = 0;
+        virtual void WriteSamplerDescriptor(u32 index, const SamplerDesc &sampler) = 0;
 
         [[nodiscard]] virtual vk::PipelineLayout GetPipelineLayout() const noexcept = 0;
 
@@ -38,10 +37,10 @@ namespace DnmRHI::Vk {
         DescriptorManagerBuffer(Vk::Device &device);
         virtual ~DescriptorManagerBuffer() override;
 
-        virtual void SetUniformBufferBindlessIndex(u32 index, Buffer &buffer, BufferSubresource subresource) override;
-        virtual void SetSampledImageBindlessIndex(u32 index, Image &image, ImageSubresource subresource) override;
-        virtual void SetStorageImageBindlessIndex(u32 index, Image &image, ImageSubresource subresource) override;
-        virtual void SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) override;
+        virtual void WriteUniformBufferDescriptor(u32 index, Buffer &buffer, BufferSubresource subresource) override;
+        virtual void WriteSampledImageDescriptor(u32 index, ImageView &image) override;
+        virtual void WriteStorageImageDescriptor(u32 index, ImageView &image) override;
+        virtual void WriteSamplerDescriptor(u32 index, const SamplerDesc &sampler) override;
 
         [[nodiscard]] virtual vk::PipelineLayout GetPipelineLayout() const noexcept override { return m_pipeline_layout; }
 
@@ -65,10 +64,10 @@ namespace DnmRHI::Vk {
         DescriptorManagerHeap(Vk::Device &device);
         virtual ~DescriptorManagerHeap() override = default;
 
-        virtual void SetUniformBufferBindlessIndex(u32 index, Buffer &buffer, BufferSubresource subresource) override;
-        virtual void SetSampledImageBindlessIndex(u32 index, Image &image, ImageSubresource subresource) override;
-        virtual void SetStorageImageBindlessIndex(u32 index, Image &image, ImageSubresource subresource) override;
-        virtual void SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) override;
+        virtual void WriteUniformBufferDescriptor(u32 index, Buffer &buffer, BufferSubresource subresource) override;
+        virtual void WriteSampledImageDescriptor(u32 index, ImageView &image) override;
+        virtual void WriteStorageImageDescriptor(u32 index, ImageView &image) override;
+        virtual void WriteSamplerDescriptor(u32 index, const SamplerDesc &sampler) override;
 
         [[nodiscard]] virtual vk::PipelineLayout GetPipelineLayout() const noexcept override { return {}; }
 

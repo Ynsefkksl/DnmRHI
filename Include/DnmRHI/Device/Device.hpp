@@ -147,13 +147,14 @@ namespace DnmRHI {
         [[nodiscard]] ResultOr<ComputePipeline *> CreateComputePipeline(const ComputePipelineDesc &desc) noexcept;
         [[nodiscard]] ResultOr<Semaphore *> CreateSemaphore(const SemaphoreDesc &desc) noexcept;
         [[nodiscard]] ResultOr<Swapchain *> CreateSwapchain(const SwapchainDesc &desc) noexcept;
+        [[nodiscard]] ResultOr<ImageView *> CreateImageView(const ImageViewDesc &desc) noexcept;
 
         [[nodiscard]] ResultOr<std::vector<u8>> CompileShader(const ShaderDesc &desc) noexcept;
 
-        Result SetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept;
-        Result SetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept;
-        Result SetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept;
-        Result SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept;
+        Result WriteUniformBufferDescriptor(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept;
+        Result WriteSampledImageDescriptor(u32 index, DnmRHI::ImageView &image_view) noexcept;
+        Result WriteStorageImageDescriptor(u32 index, DnmRHI::ImageView &image_view) noexcept;
+        Result WriteSamplerDescriptor(u32 index, const SamplerDesc &sampler) noexcept;
 
         Result SubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept;
         Result WaitSemaphore(const WaitSemaphoreDesc &desc) noexcept;
@@ -180,11 +181,12 @@ namespace DnmRHI {
         [[nodiscard]] virtual ResultOr<DnmRHI::ComputePipeline *> ICreateComputePipeline(const ComputePipelineDesc &desc) noexcept = 0;
         [[nodiscard]] virtual ResultOr<DnmRHI::Semaphore *> ICreateSemaphore(const SemaphoreDesc &desc) noexcept = 0;
         [[nodiscard]] virtual ResultOr<DnmRHI::Swapchain *> ICreateSwapchain(const SwapchainDesc &desc) noexcept = 0;
-
-        virtual Result ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept = 0;
-        virtual Result ISetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept = 0;
-        virtual Result ISetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept = 0;
-        virtual Result ISetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept = 0;
+        [[nodiscard]] virtual ResultOr<DnmRHI::ImageView *> ICreateImageView(const ImageViewDesc &desc) noexcept = 0;
+        
+        virtual Result IWriteUniformBufferDescriptor(u32 index, DnmRHI::Buffer &buffer, BufferSubresource subresource) noexcept = 0;
+        virtual Result IWriteSampledImageDescriptor(u32 index, DnmRHI::ImageView &image_view) noexcept = 0;
+        virtual Result IWriteStorageImageDescriptor(u32 index, DnmRHI::ImageView &image_view) noexcept = 0;
+        virtual Result IWriteSamplerDescriptor(u32 index, const SamplerDesc &sampler) noexcept = 0;
 
         virtual Result ISubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept = 0;
         virtual Result IWaitSemaphore(const WaitSemaphoreDesc &desc) noexcept = 0;
@@ -194,11 +196,8 @@ namespace DnmRHI {
 
         DeviceInfo m_device_info{};
         DeviceSettings m_settings{};
-        ShaderCompiler *m_shader_compiler{};
 
         slang::ISession *m_compiler_session;
         slang::IGlobalSession *m_compiler_global_session;
-
-        friend ShaderCompiler;
     };
 }

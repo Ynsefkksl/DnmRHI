@@ -2,6 +2,7 @@
 #include <DnmRHI/Platform/Vulkan/GraphicsPipeline.hpp>
 #include <DnmRHI/Platform/Vulkan/ComputePipeline.hpp>
 #include <DnmRHI/Platform/Vulkan/DescriptorManager.hpp>
+#include <DnmRHI/Platform/Vulkan/ImageView.hpp>
 
 namespace DnmRHI::Vk {
     namespace Utility {
@@ -151,10 +152,11 @@ namespace DnmRHI::Vk {
             barriers.reserve((desc.attachments.size() + 2) * 2);
 
             for (const auto &attachment : desc.attachments) {
-                auto *vk_image = static_cast<Vk::Image *>(attachment.image);
-                auto *vk_resolve_image = static_cast<Vk::Image *>(attachment.resolve_image);
+                const auto *vk_image = static_cast<Vk::Image *>(attachment.image_view->GetDesc().image);
+                const auto *vk_resolve_image = static_cast<Vk::Image *>(attachment.resolve_image_view->GetDesc().image);
 
-                const auto image_layout = GetImageLayout(vk_image);
+                const auto image_layout = GetImageLayout(attachment.image_view->GetDesc().image);
+                const auto resolve_image_layout = GetImageLayout(attachment.resolve_image_view->GetDesc().image);
 
                 if (image_layout != vk_image->c_AttachmentImageLayout) {
                     barriers.emplace_back(
@@ -207,9 +209,9 @@ namespace DnmRHI::Vk {
                     stage_flags |= vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests;
                 }
 
-                auto *vk_image = static_cast<Vk::Image *>(desc.depth_stencil_attachment->image);
-                auto *vk_depth_resolve_image = static_cast<Vk::Image *>(desc.depth_stencil_attachment->resolve_image);
-                auto *vk_stencil_resolve_image = static_cast<Vk::Image *>(desc.depth_stencil_attachment->stencil_resolve_image);
+                const auto *vk_image = static_cast<Vk::Image *>(desc.depth_stencil_attachment->image_view->GetDesc().image);
+                const auto *vk_depth_resolve_image = static_cast<Vk::Image *>(desc.depth_stencil_attachment->resolve_image_view->GetDesc().image);
+                const auto *vk_stencil_resolve_image = static_cast<Vk::Image *>(desc.depth_stencil_attachment->stencil_resolve_image_view->GetDesc().image);
 
                 const auto curr_depth_image_layout = GetImageLayout(vk_image);
                 const auto curr_stencil_image_layout = GetImageLayout(vk_image, true);
@@ -307,13 +309,14 @@ namespace DnmRHI::Vk {
         vk::RenderingAttachmentInfo stencil_attachment;
 
         for (const auto &attachment : desc.attachments) {
-            auto *vk_image = static_cast<Vk::Image *>(attachment.image);
-            auto *vk_resolve_image = static_cast<Vk::Image *>(attachment.resolve_image);
+            const auto *vk_image = static_cast<Vk::Image *>(attachment.image_view->GetDesc().image);
+            const auto *vk_resolve_image = static_cast<Vk::Image *>(attachment.resolve_image_view->GetDesc().image);
+
             color_attachments.emplace_back(
-                vk_image->GetImageView(attachment.subresource),
+                static_cast<const ImageView *>(attachment.image_view)->GetImageView(),
                 vk_image->c_AttachmentImageLayout,
                 To_Vk(attachment.resolve_mode),
-                vk_resolve_image ? vk_resolve_image->GetImageView(attachment.resolve_subresource) : vk::ImageView{},
+                vk_resolve_image ? static_cast<const ImageView *>(attachment.resolve_image_view)->GetImageView() : vk::ImageView{},
                 vk_resolve_image ? vk_resolve_image->c_AttachmentImageLayout : vk::ImageLayout{},
                 To_Vk(attachment.load_op),
                 To_Vk(attachment.store_op),
@@ -328,27 +331,27 @@ namespace DnmRHI::Vk {
         if (desc.depth_stencil_attachment != nullptr) {
             assert("unimplemented yet" && false);
             // Warn("depth stencil attachment is not supported yet");
-            auto *vk_image = static_cast<Vk::Image *>(desc.depth_stencil_attachment->image);
-            auto *vk_resolve_image = static_cast<Vk::Image *>(desc.depth_stencil_attachment->resolve_image);
-            auto *vk_stencil_resolve_image = static_cast<Vk::Image *>(desc.depth_stencil_attachment->stencil_resolve_image);
+            const auto *vk_image = static_cast<Vk::Image *>(desc.depth_stencil_attachment->image_view->GetDesc().image);
+            const auto *vk_resolve_image = static_cast<Vk::Image *>(desc.depth_stencil_attachment->resolve_image_view->GetDesc().image);
+            const auto *vk_stencil_resolve_image = static_cast<Vk::Image *>(desc.depth_stencil_attachment->stencil_resolve_image_view->GetDesc().image);
 
             depth_attachment = vk::RenderingAttachmentInfo{
-                vk_image->GetImageView(desc.depth_stencil_attachment->subresource),
+                static_cast<const ImageView *>(desc.depth_stencil_attachment->image_view)->GetImageView(),
                 read_only_depth ? vk_image->c_ReadOnlyAttachmentImageLayout : vk_image->c_AttachmentImageLayout,
                 To_Vk(desc.depth_stencil_attachment->resolve_mode),
-                vk_resolve_image->GetImageView(desc.depth_stencil_attachment->resolve_subresource),
-                vk_resolve_image->c_AttachmentImageLayout,
+                vk_resolve_image ? static_cast<const ImageView *>(desc.depth_stencil_attachment->resolve_image_view)->GetImageView() : vk::ImageView{},
+                vk_resolve_image ? vk_resolve_image->c_AttachmentImageLayout : vk::ImageLayout{},
                 To_Vk(desc.depth_stencil_attachment->load_op),
                 To_Vk(desc.depth_stencil_attachment->store_op),
                 vk::ClearValue{}.setDepthStencil(desc.depth_stencil_attachment->depth_clear_value)
             };
 
             stencil_attachment = vk::RenderingAttachmentInfo{
-                vk_image->GetImageView(desc.depth_stencil_attachment->subresource),
+                static_cast<const ImageView *>(desc.depth_stencil_attachment->image_view)->GetImageView(),
                 read_only_stencil ? vk_image->c_ReadOnlyAttachmentImageLayout : vk_image->c_AttachmentImageLayout,
                 To_Vk(desc.depth_stencil_attachment->stencil_resolve_mode),
-                vk_stencil_resolve_image->GetImageView(desc.depth_stencil_attachment->stencil_resolve_subresource),
-                vk_stencil_resolve_image->c_AttachmentImageLayout,
+                vk_stencil_resolve_image ? static_cast<const ImageView *>(desc.depth_stencil_attachment->stencil_resolve_image_view)->GetImageView() : vk::ImageView{},
+                vk_stencil_resolve_image ? vk_stencil_resolve_image->c_AttachmentImageLayout : vk::ImageLayout{},
                 To_Vk(desc.depth_stencil_attachment->stencil_load_op),
                 To_Vk(desc.depth_stencil_attachment->stencil_store_op),
                 vk::ClearValue{}.setDepthStencil(desc.depth_stencil_attachment->stencil_clear_value)
@@ -362,12 +365,12 @@ namespace DnmRHI::Vk {
             u8 mipmap;
 
             if (!desc.attachments.empty()) {
-                extent = desc.attachments[0].image->GetDesc().extent;
-                mipmap = desc.attachments[0].subresource.base_layer;
+                extent = desc.attachments[0].image_view->GetDesc().image->GetDesc().extent;
+                mipmap = desc.attachments[0].image_view->GetDesc().subresource.base_mipmap;
             }
             else {
-                extent = desc.depth_stencil_attachment->image->GetDesc().extent;
-                mipmap = desc.depth_stencil_attachment->subresource.base_layer;
+                extent = desc.depth_stencil_attachment->image_view->GetDesc().image->GetDesc().extent;
+                mipmap = desc.depth_stencil_attachment->image_view->GetDesc().subresource.base_mipmap;
             }
 
             render_area = vk::Rect2D{

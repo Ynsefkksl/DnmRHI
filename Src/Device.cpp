@@ -10,6 +10,7 @@
 #include <DnmRHI/ComputePipeline/ComputePipeline.hpp>
 #include <DnmRHI/Semaphore/Semaphore.hpp>
 #include <DnmRHI/Swapchain/Swapchain.hpp>
+#include <DnmRHI/ImageView/ImageView.hpp>
 #include <DnmRHI/Shader/ByteCodeHeader.hpp>
 
 #include <slang/slang.h>
@@ -203,6 +204,7 @@ namespace DnmRHI {
         return is_valid;
     }
 
+    // TODO: check swapchain desc
     static constexpr b8 CheckDesc(Device &device, const SwapchainDesc &desc) noexcept {
         b8 is_valid = true;
         return is_valid;
@@ -268,22 +270,6 @@ namespace DnmRHI {
             }
         }
 
-        if (!(image.GetDesc().type == ImageType::e3D && subres.type == ImageSubresourceType::e3D)) {
-            is_valid = false;
-        }
-
-        if (image.GetDesc().type == ImageType::e2D && subres.type == ImageSubresourceType::e3D) {
-            is_valid = false;
-        }
-
-        if (subres.layer_count != 6 && subres.type == ImageSubresourceType::eCube) {
-            is_valid = false;
-        }
-
-        if (subres.layer_count % 6 != 0 && subres.type == ImageSubresourceType::eCubeArray) {
-            is_valid = false;
-        }
-
         if (subres.aspect_flags.None()) {
             if (IsDepthStencilFormat(image.GetDesc().format)) {
                 subres.aspect_flags = AspectFlagBit::eDepth | AspectFlagBit::eStencil;
@@ -295,6 +281,22 @@ namespace DnmRHI {
                 subres.aspect_flags = AspectFlagBit::eColor;
             }
         }
+
+        return is_valid;
+    }
+
+    static constexpr b8 CheckDesc(Device &device, ImageViewDesc &desc) noexcept {
+        b8 is_valid = true;
+
+        if (desc.image == nullptr) {
+            is_valid = false;
+        }
+
+        if (CheckImageSubresource(device, *desc.image, desc.subresource)) {
+            is_valid = false;
+        }
+
+        // TODO: check image view type
 
         return is_valid;
     }
@@ -315,7 +317,7 @@ namespace DnmRHI {
     Result Device::Init() noexcept {
         if (GetSettings().rhi_validation) {
             // is already initialized
-            if (m_shader_compiler)
+            if (m_compiler_session)
                 return Result::eInvalidUsage;
         }
 
@@ -380,6 +382,15 @@ namespace DnmRHI {
                 return std::unexpected(Result::eInvalidParameter);
         }
         return ICreateSwapchain(desc);
+    }
+
+    ResultOr<ImageView *> Device::CreateImageView(const ImageViewDesc &desc) noexcept {
+        ImageViewDesc desc_copy{desc};
+        if (GetSettings().rhi_validation) {
+            if (!CheckDesc(*this, desc_copy))
+                return std::unexpected(Result::eInvalidParameter);
+        }
+        return ICreateImageView(desc_copy);
     }
 
     ResultOr<std::vector<u8>> Device::CompileShader(const ShaderDesc &desc) noexcept {
@@ -471,7 +482,7 @@ namespace DnmRHI {
         return out;
     }
 
-    Result Device::SetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept {
+    Result Device::WriteUniformBufferDescriptor(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept {
         BufferSubresource subres(subresource);
         
         if (GetSettings().rhi_validation) {
@@ -488,56 +499,37 @@ namespace DnmRHI {
             }
         }
 
-        return ISetUniformBufferBindlessIndex(index, buffer, subres);
+        return IWriteUniformBufferDescriptor(index, buffer, subres);
     }
 
-    Result Device::SetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
-        ImageSubresource subres(subresource);
-
+    Result Device::WriteSampledImageDescriptor(u32 index, DnmRHI::ImageView &image_view) noexcept {
         if (GetSettings().rhi_validation) {
             if (m_settings.resource_count <= index) {
                 return Result::eInvalidParameter;
             }
-    
-            if (!image.GetDesc().flags.Has(ImageFlagBit::eSampled)) {
-                return Result::eInvalidParameter;
-            }
-    
-            if (!CheckImageSubresource(*this, image, subres)) {
-                return Result::eInvalidParameter;
-            }
         }
 
-        return ISetSampledImageBindlessIndex(index, image, subres);
+        return IWriteSampledImageDescriptor(index, image_view);
     }
 
-    Result Device::SetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
+    Result Device::WriteStorageImageDescriptor(u32 index, DnmRHI::ImageView &image_view) noexcept {
         if (GetSettings().rhi_validation) {
             if (m_settings.resource_count <= index) {
                 return Result::eInvalidParameter;
             }
-
-            if (!image.GetDesc().flags.Has(ImageFlagBit::eStorage)) {
-                return Result::eInvalidParameter;
-            }
-
-            ImageSubresource subres(subresource);
-            if (!CheckImageSubresource(*this, image, subres)) {
-                return Result::eInvalidParameter;
-            }
         }
 
-        return ISetStorageImageBindlessIndex(index, image, subresource);
+        return IWriteStorageImageDescriptor(index, image_view);
     }
 
-    Result Device::SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept {
+    Result Device::WriteSamplerDescriptor(u32 index, const SamplerDesc &sampler) noexcept {
         if (GetSettings().rhi_validation) {
             if (m_settings.sampler_count <= index) {
                 return Result::eInvalidParameter;
             }
         }
 
-        return ISetSamplerBindlessIndex(index, sampler);
+        return IWriteSamplerDescriptor(index, sampler);
     }
 
     Result Device::SubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept {

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <DnmRHI/Image/SubresourceType.hpp>
 #include <DnmRHI/Image/Type.hpp>
 #include <DnmRHI/Image/SampleCount.hpp>
 #include <DnmRHI/Image/Flags.hpp>

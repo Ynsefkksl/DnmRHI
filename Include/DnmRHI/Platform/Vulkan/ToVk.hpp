@@ -117,13 +117,13 @@ namespace DnmRHI::Vk {
         std::unreachable();
     }
 
-    [[nodiscard]] constexpr auto To_Vk(DnmRHI::ImageSubresourceType type) noexcept {
+    [[nodiscard]] constexpr auto To_Vk(DnmRHI::ImageViewType type) noexcept {
         switch (type) {
-            case ImageSubresourceType::e2D: return vk::ImageViewType::e2D;
-            case ImageSubresourceType::e2DArray: return vk::ImageViewType::e2DArray;
-            case ImageSubresourceType::e3D: return vk::ImageViewType::e3D;
-            case ImageSubresourceType::eCube: return vk::ImageViewType::eCube;
-            case ImageSubresourceType::eCubeArray: return vk::ImageViewType::eCubeArray;
+            case ImageViewType::e2D: return vk::ImageViewType::e2D;
+            case ImageViewType::e2DArray: return vk::ImageViewType::e2DArray;
+            case ImageViewType::e3D: return vk::ImageViewType::e3D;
+            case ImageViewType::eCube: return vk::ImageViewType::eCube;
+            case ImageViewType::eCubeArray: return vk::ImageViewType::eCubeArray;
         }
         std::unreachable();
     }

@@ -22,12 +22,12 @@ namespace DnmRHI::Vk {
     class DescriptorManager;
     class Image;
     class Buffer;
-    class Shader;
     class ComputePipeline;
     class GraphicsPipeline;
     class RayTracingPipeline;
     class CommandBuffer;
     class Semaphore;
+    class ImageView;
 
     struct DeviceFeatures {
         b8 win32_surface: 1;
@@ -78,11 +78,12 @@ namespace DnmRHI::Vk {
         [[nodiscard]] virtual ResultOr<DnmRHI::ComputePipeline *> ICreateComputePipeline(const ComputePipelineDesc &desc) noexcept override;
         [[nodiscard]] virtual ResultOr<DnmRHI::Semaphore *> ICreateSemaphore(const SemaphoreDesc &desc) noexcept override;
         [[nodiscard]] virtual ResultOr<DnmRHI::Swapchain *> ICreateSwapchain(const SwapchainDesc &desc) noexcept override;
+        [[nodiscard]] virtual ResultOr<DnmRHI::ImageView *> ICreateImageView(const ImageViewDesc &desc) noexcept override;
 
-        virtual Result ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept override;
-        virtual Result ISetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept override;
-        virtual Result ISetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept override;
-        virtual Result ISetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept override;
+        virtual Result IWriteUniformBufferDescriptor(u32 index, DnmRHI::Buffer &buffer, BufferSubresource subresource) noexcept override;
+        virtual Result IWriteSampledImageDescriptor(u32 index, DnmRHI::ImageView &image_view) noexcept override;
+        virtual Result IWriteStorageImageDescriptor(u32 index, DnmRHI::ImageView &image) noexcept override;
+        virtual Result IWriteSamplerDescriptor(u32 index, const SamplerDesc &sampler) noexcept override;
 
         virtual Result ISubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept override;
         virtual Result IWaitSemaphore(const WaitSemaphoreDesc &desc) noexcept override;

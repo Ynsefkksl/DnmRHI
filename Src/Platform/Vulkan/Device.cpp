@@ -5,6 +5,7 @@
 #include <DnmRHI/Platform/Vulkan/Semaphore.hpp>
 #include <DnmRHI/Platform/Vulkan/CommandBuffer.hpp>
 #include <DnmRHI/Platform/Vulkan/Swapchain.hpp>
+#include <DnmRHI/Platform/Vulkan/ImageView.hpp>
 #include <vulkan/vulkan_profiles.h>
 
 #include <slang/slang.h>
@@ -946,24 +947,27 @@ namespace DnmRHI::Vk {
     ResultOr<DnmRHI::Swapchain *> Device::ICreateSwapchain(const SwapchainDesc &desc) noexcept {
         return new Swapchain(*this, desc);
     }
+    ResultOr<DnmRHI::ImageView *> Device::ICreateImageView(const ImageViewDesc &desc) noexcept {
+        return new ImageView(*this, desc);
+    }
 
-    Result Device::ISetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept {
-        m_descriptor_manager->SetUniformBufferBindlessIndex(index, static_cast<Vk::Buffer &>(buffer), subresource);
+    Result Device::IWriteUniformBufferDescriptor(u32 index, DnmRHI::Buffer &buffer, BufferSubresource subresource) noexcept {
+        m_descriptor_manager->WriteUniformBufferDescriptor(index, static_cast<Vk::Buffer &>(buffer), subresource);
         return Result::eSuccess;
     }
 
-    Result Device::ISetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
-        m_descriptor_manager->SetSampledImageBindlessIndex(index, static_cast<Vk::Image &>(image), subresource);
+    Result Device::IWriteSampledImageDescriptor(u32 index, DnmRHI::ImageView &image_view) noexcept {
+        m_descriptor_manager->WriteSampledImageDescriptor(index, static_cast<Vk::ImageView &>(image_view));
         return Result::eSuccess;
     }
 
-    Result Device::ISetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
-        m_descriptor_manager->SetStorageImageBindlessIndex(index, static_cast<Vk::Image &>(image), subresource);
+    Result Device::IWriteStorageImageDescriptor(u32 index, DnmRHI::ImageView &image_view) noexcept {
+        m_descriptor_manager->WriteStorageImageDescriptor(index, static_cast<Vk::ImageView &>(image_view));
         return Result::eSuccess;
     }
 
-    Result Device::ISetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept {
-        m_descriptor_manager->SetSamplerBindlessIndex(index, sampler);
+    Result Device::IWriteSamplerDescriptor(u32 index, const SamplerDesc &sampler) noexcept {
+        m_descriptor_manager->WriteSamplerDescriptor(index, sampler);
         return Result::eSuccess;
     }
 

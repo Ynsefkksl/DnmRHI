@@ -146,19 +146,6 @@ namespace DnmRHI::Vk {
         if (!desc.name.empty()) SET_DEBUG_NAME_VK_OBJECT(GetVkDevice.GetDevice(), m_image, GetDesc().name.data());
     }
 
-    vk::ImageViewCreateInfo Image::GetCreateImageViewInfo(DnmRHI::ImageSubresource subresource) const noexcept {
-        return vk::ImageViewCreateInfo()
-                .setImage(m_image)
-                .setViewType(To_Vk(subresource.type))
-                .setFormat(To_Vk(GetDesc().format))
-                .setSubresourceRange(vk::ImageSubresourceRange()
-                    .setAspectMask(To_Vk(subresource.aspect_flags))
-                    .setBaseMipLevel(subresource.base_layer)
-                    .setLevelCount(subresource.mipmap_count)
-                    .setBaseArrayLayer(subresource.layer_count)
-                    .setLayerCount(subresource.base_mipmap));
-    }
-
     Image::Image(Vk::Device &device, vk::Image image, ImageFlags flags, u32 width, u32 height, vk::Format format, Vk::Swapchain *swapchain, u8 swapchain_image_index, std::string_view name) noexcept
     :   m_swapchain(swapchain),
         c_SwapchainImageIndex(swapchain_image_index),
@@ -181,20 +168,6 @@ namespace DnmRHI::Vk {
         c_CopyDstImageLayout{Utility::SelectCopyDstLayout(flags, GetVkDeviceFeatures.unified_image_layouts)},
         c_VariableRateShadingLayout{Utility::SelectVariableRateShadingLayout(flags, GetVkDeviceFeatures.unified_image_layouts)},
         m_image(image),
-        m_allocation(nullptr),
-        c_SwapchainImageView(GetVkDevice.GetDevice().createImageView(
-            vk::ImageViewCreateInfo{}
-                .setImage(image)
-                .setViewType(vk::ImageViewType::e2D)
-                .setFormat(format)
-                .setSubresourceRange(
-                    vk::ImageSubresourceRange{}
-                    .setAspectMask(vk::ImageAspectFlagBits::eColor)
-                    .setBaseArrayLayer(0)
-                    .setBaseMipLevel(0)
-                    .setLayerCount(1)
-                    .setLevelCount(1)
-            )
-        )) {}
+        m_allocation(nullptr) {}
 }
 

@@ -33,8 +33,10 @@
 #include <DnmRHI/Image/Flags.hpp>
 #include <DnmRHI/Image/SampleCount.hpp>
 #include <DnmRHI/Image/SubresourceLayers.hpp>
-#include <DnmRHI/Image/SubresourceType.hpp>
 #include <DnmRHI/Image/Type.hpp>
+
+#include <DnmRHI/ImageView/ImageView.hpp>
+#include <DnmRHI/ImageView/Desc.hpp>
 
 // RT
 

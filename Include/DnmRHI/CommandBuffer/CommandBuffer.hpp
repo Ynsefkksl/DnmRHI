@@ -121,31 +121,25 @@ namespace DnmRHI {
     };
 
     struct ColorAttachment {
-        Image *image;
-        ImageSubresource subresource;
-        Image *resolve_image;
-        ImageSubresource resolve_subresource;
+        ImageView *image_view;
+        ImageView *resolve_image_view;
         ResolveModeFlagBit resolve_mode;
         AttachmentLoadOp load_op;
         AttachmentStoreOp store_op;
         std::array<u32, 4> clear_value;
 
-        constexpr auto &SetImage(Image *image) noexcept { this->image = image; return *this; }
-        constexpr auto &SetSubresource(ImageSubresource subresource) noexcept { this->subresource = subresource; return *this; }
-        constexpr auto &SetResolveImage(Image *image) noexcept { this->resolve_image = image; return *this; }
-        constexpr auto &SetResolveSubresource(ImageSubresource subresource) noexcept { this->resolve_subresource = subresource; return *this; }
+        constexpr auto &SetImageView(ImageView *image_view) noexcept { this->image_view = image_view; return *this; }
+        constexpr auto &SetResolveImageView(ImageView *image_view) noexcept { this->resolve_image_view = image_view; return *this; }
+        constexpr auto &SetResolveMode(ResolveModeFlagBit mode) noexcept { this->resolve_mode = mode; return *this; }
         constexpr auto &SetLoadOp(AttachmentLoadOp op) noexcept { this->load_op = op; return *this; }
         constexpr auto &SetStoreOp(AttachmentStoreOp op) noexcept { this->store_op = op; return *this; }
         constexpr auto &SetClearValue(std::array<u32, 4> value) noexcept { this->clear_value = value; return *this; }
     };
 
     struct DepthStencilAttachment {
-        Image *image;
-        ImageSubresource subresource;
-        Image *resolve_image;
-        ImageSubresource resolve_subresource;
-        Image *stencil_resolve_image;
-        ImageSubresource stencil_resolve_subresource;
+        ImageView *image_view;
+        ImageView *resolve_image_view;
+        ImageView *stencil_resolve_image_view;
         ResolveModeFlagBit resolve_mode;
         ResolveModeFlagBit stencil_resolve_mode;
         AttachmentLoadOp load_op;
@@ -155,20 +149,17 @@ namespace DnmRHI {
         float depth_clear_value;
         u8 stencil_clear_value;
         
-        constexpr auto &SetImage(Image *image) noexcept { this->image = image; return *this; }
-        constexpr auto &SetSubresource(ImageSubresource subresource) noexcept { this->subresource = subresource; return *this; }
-        constexpr auto &SetResolveImage(Image *image) noexcept { this->resolve_image = image; return *this; }
-        constexpr auto &SetResolveSubresource(ImageSubresource subresource) noexcept { this->resolve_subresource = subresource; return *this; }
+        constexpr auto &SetImageView(ImageView *image_view) noexcept { this->image_view = image_view; return *this; }
+        constexpr auto &SetResolveImageView(ImageView *image_view) noexcept { this->resolve_image_view = image_view; return *this; }
+        constexpr auto &SetStencilResolveImageView(ImageView *image_view) noexcept { this->stencil_resolve_image_view = image_view; return *this; }
+        constexpr auto &SetResolveMode(ResolveModeFlagBit mode) noexcept { this->resolve_mode = mode; return *this; }
+        constexpr auto &SetStencilResolveMode(ResolveModeFlagBit mode) noexcept { this->stencil_resolve_mode = mode; return *this; }
         constexpr auto &SetLoadOp(AttachmentLoadOp op) noexcept { this->load_op = op; return *this; }
+        constexpr auto &SetStencilLoadOp(AttachmentLoadOp op) noexcept { this->stencil_load_op = op; return *this; }
         constexpr auto &SetStoreOp(AttachmentStoreOp op) noexcept { this->store_op = op; return *this; }
+        constexpr auto &SetStencilStoreOp(AttachmentStoreOp op) noexcept { this->stencil_store_op = op; return *this; }
         constexpr auto &SetDepthClearValue(float value) noexcept { this->depth_clear_value = value; return *this; }
         constexpr auto &SetStencilClearValue(u8 value) noexcept { this->stencil_clear_value = value; return *this; }
-        constexpr auto &SetStencilResolveMode(ResolveModeFlagBit mode) noexcept { this->stencil_resolve_mode = mode; return *this; }
-        constexpr auto &SetStencilResolveImage(Image *image) noexcept { this->stencil_resolve_image = image; return *this; }
-        constexpr auto &SetStencilResolveSubresource(ImageSubresource subresource) noexcept { this->stencil_resolve_subresource = subresource; return *this; }
-        constexpr auto &SetStencilLoadOp(AttachmentLoadOp op) noexcept { this->stencil_load_op = op; return *this; }
-        constexpr auto &SetStencilStoreOp(AttachmentStoreOp op) noexcept { this->stencil_store_op = op; return *this; }
-        constexpr auto &SetResolveMode(ResolveModeFlagBit mode) noexcept { this->resolve_mode = mode; return *this; }
     };
 
     struct RenderPassDesc {

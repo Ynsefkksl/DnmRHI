@@ -1,6 +1,7 @@
 #include <DnmRHI/Platform/Vulkan/DescriptorManager.hpp>
 #include <DnmRHI/Platform/Vulkan/ToVk.hpp>
 #include <DnmRHI/Platform/Vulkan/Buffer.hpp>
+#include <DnmRHI/Platform/Vulkan/ImageView.hpp>
 #include <DnmRHI/Platform/Vulkan/Image.hpp>
 
 namespace DnmRHI::Vk {
@@ -212,7 +213,7 @@ namespace DnmRHI::Vk {
             );
     }
 
-    void DescriptorManagerBuffer::SetUniformBufferBindlessIndex(u32 index, Buffer &buffer, BufferSubresource subresource)  {
+    void DescriptorManagerBuffer::WriteUniformBufferDescriptor(u32 index, Buffer &buffer, BufferSubresource subresource)  {
         const auto descriptor_buffer_info
             = vk::DescriptorAddressInfoEXT{}
                 .setAddress(buffer.GetDeviceAddress() + subresource.offset)
@@ -222,27 +223,27 @@ namespace DnmRHI::Vk {
         WriteResourceDescriptor(index, vk::DescriptorType::eUniformBuffer, &descriptor_buffer_info);
     }
 
-    void DescriptorManagerBuffer::SetSampledImageBindlessIndex(u32 index, Image &image, ImageSubresource subresource) {
+    void DescriptorManagerBuffer::WriteSampledImageDescriptor(u32 index, ImageView &image_view) {
         const auto descriptor_image_info
             = vk::DescriptorImageInfo{}
-                .setImageLayout(image.c_DefaultLayout)
-                .setImageView(image.GetImageView(subresource))
+                .setImageLayout(static_cast<const Vk::Image &>(*image_view.GetDesc().image).c_DefaultLayout)
+                .setImageView(image_view.GetImageView())
                 ;
 
         WriteResourceDescriptor(index, vk::DescriptorType::eSampledImage, &descriptor_image_info);
     }
 
-    void DescriptorManagerBuffer::SetStorageImageBindlessIndex(u32 index, Image &image, ImageSubresource subresource) {
+    void DescriptorManagerBuffer::WriteStorageImageDescriptor(u32 index, ImageView &image_view) {
         const auto descriptor_image_info
             = vk::DescriptorImageInfo{}
-                .setImageLayout(image.c_DefaultLayout)
-                .setImageView(image.GetImageView(subresource))
+                .setImageLayout(static_cast<const Vk::Image &>(*image_view.GetDesc().image).c_DefaultLayout)
+                .setImageView(image_view.GetImageView())
                 ;
 
         WriteResourceDescriptor(index, vk::DescriptorType::eStorageImage, &descriptor_image_info);
     }
 
-    void DescriptorManagerBuffer::SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler_desc) {
+    void DescriptorManagerBuffer::WriteSamplerDescriptor(u32 index, const SamplerDesc &sampler_desc) {
         const auto sampler = m_device.GetDevice().createSampler(GetSamplerCreateInfo(sampler_desc), m_device.GetAllocationCallbacks());
         
         {
@@ -309,7 +310,7 @@ namespace DnmRHI::Vk {
         m_sampler_buffer_address = m_sampler_buffer->GetDeviceAddress();
     }
 
-    void DescriptorManagerHeap::SetUniformBufferBindlessIndex(u32 index, Buffer &buffer, BufferSubresource subresource) {
+    void DescriptorManagerHeap::WriteUniformBufferDescriptor(u32 index, Buffer &buffer, BufferSubresource subresource) {
         const auto device_adress_range
             = vk::DeviceAddressRangeEXT{}
                 .setAddress(buffer.GetDeviceAddress() + subresource.offset)
@@ -329,13 +330,11 @@ namespace DnmRHI::Vk {
                 m_device.GetVulkanDeviceProperties().resource_descriptor_size_for_heap}});
     }
 
-    void DescriptorManagerHeap::SetSampledImageBindlessIndex(u32 index, Image &image, ImageSubresource subresource) {
-        const auto image_view_create_info = image.GetCreateImageViewInfo(subresource);
-
+    void DescriptorManagerHeap::WriteSampledImageDescriptor(u32 index, ImageView &image_view) {
         const auto image_info
             = vk::ImageDescriptorInfoEXT{}
-                .setLayout(image.c_DefaultLayout)
-                .setPView(&image_view_create_info)
+                .setLayout(static_cast<const Vk::Image &>(*image_view.GetDesc().image).c_DefaultLayout)
+                .setPView(&image_view.GetCreateInfo())
                 ;
 
         const auto descriptor_info 
@@ -351,13 +350,11 @@ namespace DnmRHI::Vk {
                 m_device.GetVulkanDeviceProperties().resource_descriptor_size_for_heap}});
     }
 
-    void DescriptorManagerHeap::SetStorageImageBindlessIndex(u32 index, Image &image, ImageSubresource subresource) {
-        const auto image_view_create_info = image.GetCreateImageViewInfo(subresource);
-
+    void DescriptorManagerHeap::WriteStorageImageDescriptor(u32 index, ImageView &image_view) {
         const auto image_info
             = vk::ImageDescriptorInfoEXT{}
-                .setLayout(image.c_DefaultLayout)
-                .setPView(&image_view_create_info)
+                .setLayout(static_cast<const Vk::Image &>(*image_view.GetDesc().image).c_DefaultLayout)
+                .setPView(&image_view.GetCreateInfo())
                 ;
 
         const auto descriptor_info 
@@ -373,7 +370,7 @@ namespace DnmRHI::Vk {
                 m_device.GetVulkanDeviceProperties().resource_descriptor_size_for_heap}});
     }
 
-    void DescriptorManagerHeap::SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) {
+    void DescriptorManagerHeap::WriteSamplerDescriptor(u32 index, const SamplerDesc &sampler) {
         const auto sampler_create_info = GetSamplerCreateInfo(sampler);
 
         m_device.GetDevice().writeSamplerDescriptorsEXT(
