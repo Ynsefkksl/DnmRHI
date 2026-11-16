@@ -1,3 +1,4 @@
+#include "DnmRHI/Utility/Counter.hpp"
 #include <DnmRHI/Platform/Vulkan/CommandBuffer.hpp>
 #include <DnmRHI/Platform/Vulkan/GraphicsPipeline.hpp>
 #include <DnmRHI/Platform/Vulkan/ComputePipeline.hpp>
@@ -80,7 +81,6 @@ namespace DnmRHI::Vk {
                 .setFlags(one_time_submit ? vk::CommandBufferUsageFlagBits::eOneTimeSubmit : vk::CommandBufferUsageFlagBits{})
         );
 
-        // TODO: this really needed?
         // for safe buffer read
         {
             const auto mem_barrier
@@ -102,13 +102,11 @@ namespace DnmRHI::Vk {
     }
 
     Result CommandBuffer::IEnd() noexcept {
-        std::vector<ImageBarrierDesc> image_barriers;
-        image_barriers.reserve(m_image_layouts.size() * 2);
         for (const auto &[image, layouts] : m_image_layouts) {
             if (image->c_IsSwapchainImage) continue;
             // color/depth
             if (image->c_DefaultLayout != layouts[0] && vk::ImageLayout::eUndefined != layouts[0]) {
-                image_barriers.emplace_back(
+                m_image_barriers.emplace_back(
                     Utility::GetSyncFromImageLayout(layouts[0], image->GetDesc().flags, 
                         IsColorFormat(image->GetDesc().format)),
                     Sync{},
@@ -120,17 +118,17 @@ namespace DnmRHI::Vk {
             }
             // stencil
             if (image->c_DefaultLayout != layouts[1] && vk::ImageLayout::eUndefined != layouts[1]) {
-                image_barriers.emplace_back(
-                    Utility::GetSyncFromImageLayout(layouts[0], image->GetDesc().flags, false),
+                m_image_barriers.emplace_back(
+                    Utility::GetSyncFromImageLayout(layouts[1], image->GetDesc().flags, false),
                     Sync{},
                     image,
                     ImageSubresource{}.SetLayerCount(0).SetMipmapCount(0),
-                    layouts[0],
+                    layouts[1],
                     image->c_DefaultLayout
                 );
             }
         }
-        InternalBarrier({}, image_barriers);
+        InternalBarrier();
         m_command_buffer.end();
         m_image_layouts.clear();
 
@@ -148,9 +146,6 @@ namespace DnmRHI::Vk {
         const auto read_only_stencil = desc.flags.Has(RenderPassFlagBit::eReadOnlyStencil);
 
         if (!GetVkDeviceFeatures.unified_image_layouts) {
-            std::vector<ImageBarrierDesc> barriers;
-            barriers.reserve((desc.attachments.size() + 2) * 2);
-
             for (const auto &attachment : desc.attachments) {
                 const auto *vk_image = static_cast<Vk::Image *>(attachment.image_view->GetDesc().image);
                 const auto *vk_resolve_image = static_cast<Vk::Image *>(attachment.resolve_image_view->GetDesc().image);
@@ -159,7 +154,7 @@ namespace DnmRHI::Vk {
                 const auto resolve_image_layout = GetImageLayout(attachment.resolve_image_view->GetDesc().image);
 
                 if (image_layout != vk_image->c_AttachmentImageLayout) {
-                    barriers.emplace_back(
+                    m_image_barriers.emplace_back(
                             //TODO:
                             Sync{}, 
                             Sync{
@@ -178,7 +173,7 @@ namespace DnmRHI::Vk {
                     SetImageLayout(vk_image, vk_image->c_AttachmentImageLayout);
                 }
                 if (vk_resolve_image != nullptr && (image_layout != vk_resolve_image->c_AttachmentImageLayout)) {
-                    barriers.emplace_back(
+                    m_image_barriers.emplace_back(
                             //TODO:
                             Sync{}, 
                             Sync{vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite},
@@ -222,7 +217,7 @@ namespace DnmRHI::Vk {
                 const auto stencil_image_layout = read_only_stencil ? vk_image->c_ReadOnlyAttachmentImageLayout : vk_image->c_AttachmentImageLayout;
 
                 if (curr_depth_image_layout != depth_image_layout) {
-                    barriers.emplace_back(
+                    m_image_barriers.emplace_back(
                             //TODO:
                             Sync{}, 
                             Sync{
@@ -242,7 +237,7 @@ namespace DnmRHI::Vk {
                     SetImageLayout(vk_image, depth_image_layout);
                 }
                 if (curr_stencil_image_layout != stencil_image_layout) {
-                    barriers.emplace_back(
+                    m_image_barriers.emplace_back(
                             //TODO:
                             Sync{}, 
                             Sync{
@@ -256,13 +251,13 @@ namespace DnmRHI::Vk {
                                 .SetBaseMipmap(0)
                                 .SetLayerCount(vk_image->GetDesc().type == ImageType::e2D ? vk_image->GetDesc().extent.depth : 1)
                                 .SetMipmapCount(vk_image->GetDesc().mipmap_count),
-                            curr_depth_image_layout,
+                            curr_stencil_image_layout,
                             stencil_image_layout
                     );
                     SetImageLayout(vk_image, stencil_image_layout, true);
                 }
                 if (curr_depth_resolve_image_layout != vk_depth_resolve_image->c_AttachmentImageLayout) {
-                    barriers.emplace_back(
+                    m_image_barriers.emplace_back(
                             //TODO:
                             Sync{}, 
                             Sync{
@@ -282,7 +277,7 @@ namespace DnmRHI::Vk {
                     SetImageLayout(vk_depth_resolve_image, vk_depth_resolve_image->c_AttachmentImageLayout);
                 }
                 if (curr_stencil_resolve_image_layout != vk_stencil_resolve_image->c_AttachmentImageLayout) {
-                    barriers.emplace_back(
+                    m_image_barriers.emplace_back(
                             //TODO:
                             Sync{}, 
                             Sync{
@@ -296,41 +291,41 @@ namespace DnmRHI::Vk {
                                 .SetBaseMipmap(0)
                                 .SetLayerCount(vk_stencil_resolve_image->GetDesc().type == ImageType::e2D ? vk_stencil_resolve_image->GetDesc().extent.depth : 1)
                                 .SetMipmapCount(vk_stencil_resolve_image->GetDesc().mipmap_count),
-                            curr_depth_image_layout,
+                            curr_stencil_image_layout,
                             vk_stencil_resolve_image->c_AttachmentImageLayout
                     );
                     SetImageLayout(vk_stencil_resolve_image, vk_stencil_resolve_image->c_AttachmentImageLayout, true);
                 }
             }
+
+            InternalBarrier();
         }
 
-        std::vector<vk::RenderingAttachmentInfo> color_attachments;
+        std::array<vk::RenderingAttachmentInfo, c_Max_Color_Attachments> color_attachments;
         vk::RenderingAttachmentInfo depth_attachment;
         vk::RenderingAttachmentInfo stencil_attachment;
 
-        for (const auto &attachment : desc.attachments) {
-            const auto *vk_image = static_cast<Vk::Image *>(attachment.image_view->GetDesc().image);
-            const auto *vk_resolve_image = static_cast<Vk::Image *>(attachment.resolve_image_view->GetDesc().image);
+        for (const auto i : Counter(desc.attachments.size())) {
+            const auto *vk_image = static_cast<Vk::Image *>(desc.attachments[i].image_view->GetDesc().image);
+            const auto *vk_resolve_image = static_cast<Vk::Image *>(desc.attachments[i].resolve_image_view->GetDesc().image);
 
-            color_attachments.emplace_back(
-                static_cast<const ImageView *>(attachment.image_view)->GetImageView(),
+            color_attachments[i] = vk::RenderingAttachmentInfo(
+                static_cast<const ImageView *>(desc.attachments[i].image_view)->GetImageView(),
                 vk_image->c_AttachmentImageLayout,
-                To_Vk(attachment.resolve_mode),
-                vk_resolve_image ? static_cast<const ImageView *>(attachment.resolve_image_view)->GetImageView() : vk::ImageView{},
+                To_Vk(desc.attachments[i].resolve_mode),
+                vk_resolve_image ? static_cast<const ImageView *>(desc.attachments[i].resolve_image_view)->GetImageView() : vk::ImageView{},
                 vk_resolve_image ? vk_resolve_image->c_AttachmentImageLayout : vk::ImageLayout{},
-                To_Vk(attachment.load_op),
-                To_Vk(attachment.store_op),
+                To_Vk(desc.attachments[i].load_op),
+                To_Vk(desc.attachments[i].store_op),
                 vk::ClearValue{{
-                    attachment.clear_value[0], 
-                    attachment.clear_value[1], 
-                    attachment.clear_value[2],
-                    attachment.clear_value[3]}}
+                    desc.attachments[i].clear_value[0], 
+                    desc.attachments[i].clear_value[1], 
+                    desc.attachments[i].clear_value[2],
+                    desc.attachments[i].clear_value[3]}}
             );
         }
 
         if (desc.depth_stencil_attachment != nullptr) {
-            assert("unimplemented yet" && false);
-            // Warn("depth stencil attachment is not supported yet");
             const auto *vk_image = static_cast<Vk::Image *>(desc.depth_stencil_attachment->image_view->GetDesc().image);
             const auto *vk_resolve_image = static_cast<Vk::Image *>(desc.depth_stencil_attachment->resolve_image_view->GetDesc().image);
             const auto *vk_stencil_resolve_image = static_cast<Vk::Image *>(desc.depth_stencil_attachment->stencil_resolve_image_view->GetDesc().image);
@@ -386,41 +381,41 @@ namespace DnmRHI::Vk {
                 render_area,
                 desc.layer_count,
                 0,
-                static_cast<uint32_t>(color_attachments.size()),
+                static_cast<uint32_t>(desc.attachments.size()),
                 color_attachments.data(),
-                &depth_attachment,
-                &stencil_attachment
+                desc.depth_stencil_attachment->image_view ? &depth_attachment : nullptr,
+                desc.depth_stencil_attachment->image_view ? &stencil_attachment : nullptr
             }
         );
         return Result::eSuccess;
     }
 
     Result CommandBuffer::ISetViewport(std::span<const Viewport> viewport) noexcept {
-        std::vector<vk::Viewport> vk_viewports;
-        vk_viewports.reserve(viewport.size());
-        for (const auto &viewport : viewport)
-            vk_viewports.emplace_back(
-                viewport.x,
-                viewport.height + viewport.y,
-                viewport.width,
-                -viewport.height,
-                viewport.min_depth,
-                viewport.max_depth
-            );
+        std::array<vk::Viewport, c_Max_Scissor_Count> vk_viewports;
 
-        m_command_buffer.setViewport(0, vk_viewports);
+        for (const auto i : Counter(viewport.size()))
+            vk_viewports[i] = vk::Viewport{
+                viewport[i].x,
+                viewport[i].height + viewport[i].y,
+                viewport[i].width,
+                -viewport[i].height,
+                viewport[i].min_depth,
+                viewport[i].max_depth
+            };
+
+        m_command_buffer.setViewport(0, viewport.size(), vk_viewports.data());
         return Result::eSuccess;
     }
     Result CommandBuffer::ISetScissor(std::span<const Scissor> scissor) noexcept {
-        std::vector<vk::Rect2D> vk_scissors;
-        vk_scissors.reserve(scissor.size());
-        for (const auto &scissor : scissor)
-            vk_scissors.emplace_back(VkRect2D{
-                vk::Offset2D{scissor.x, scissor.y},
-                vk::Extent2D{scissor.width, scissor.height}
-            });
+        std::array<vk::Rect2D, c_Max_Scissor_Count> vk_scissors;
 
-        m_command_buffer.setScissor(0, vk_scissors);
+        for (const auto i : Counter(scissor.size()))
+            vk_scissors[i] = vk::Rect2D{
+                vk::Offset2D{scissor[i].x, scissor[i].y},
+                vk::Extent2D{scissor[i].width, scissor[i].height}
+            };
+
+        m_command_buffer.setScissor(0, scissor.size(), vk_scissors.data());
         return Result::eSuccess;
     }
     Result CommandBuffer::ISetStencilRef(u32 front, u32 back) noexcept {
@@ -499,8 +494,6 @@ namespace DnmRHI::Vk {
         const auto dst_subresource = To_Vk(desc.dst_subresource);
 
         if (!GetVkDevice.GetVulkanDeviceFeatures().unified_image_layouts) {
-            std::array<ImageBarrierDesc, 2> barrier;
-
             const auto src_layout = GetImageLayout(vk_src_image);
             const auto dst_layout = GetImageLayout(vk_dst_image);
 
@@ -508,7 +501,7 @@ namespace DnmRHI::Vk {
             const b8 dst_need_layout_translation = vk_dst_image->c_CopyDstImageLayout != dst_layout;
 
             if (src_need_layout_translation) {
-                barrier[0] = ImageBarrierDesc{
+                m_image_barriers.emplace_back(ImageBarrierDesc{
                         //TODO:
                         Sync{}, 
                         Sync{vk::PipelineStageFlagBits2::eBlit, vk::AccessFlagBits2::eTransferRead},
@@ -521,10 +514,10 @@ namespace DnmRHI::Vk {
                             .SetMipmapCount(vk_src_image->GetDesc().mipmap_count),
                         src_layout,
                         vk_src_image->c_CopySrcImageLayout
-                    };
+                    });
             }
             if (dst_need_layout_translation) {
-                barrier[src_need_layout_translation] = ImageBarrierDesc{
+                m_image_barriers.emplace_back(ImageBarrierDesc{
                         //TODO:
                         Sync{}, 
                         Sync{vk::PipelineStageFlagBits2::eBlit, vk::AccessFlagBits2::eTransferWrite},
@@ -537,11 +530,10 @@ namespace DnmRHI::Vk {
                             .SetMipmapCount(vk_dst_image->GetDesc().mipmap_count),
                         dst_layout,
                         vk_dst_image->c_CopyDstImageLayout
-                    };
+                    });
             }
 
-            InternalBarrier({}, 
-                {barrier.data(), u32(src_need_layout_translation) + dst_need_layout_translation});
+            InternalBarrier();
 
             SetImageLayout(vk_src_image, vk_src_image->c_CopySrcImageLayout);
             SetImageLayout(vk_dst_image, vk_dst_image->c_CopyDstImageLayout);
@@ -590,16 +582,16 @@ namespace DnmRHI::Vk {
         const auto *vk_image_ptr = static_cast<const Vk::Image *>(&swapchain_image);
         if (!m_image_layouts.contains(vk_image_ptr)) return Result::eSuccess;
 
-        const ImageBarrierDesc barrier_desc {
+        m_image_barriers.emplace_back(ImageBarrierDesc{
                 To_Vk(before_sync),
                 Sync{},
                 vk_image_ptr,
                 ImageSubresource{}.SetLayerCount(0).SetMipmapCount(0),
                 m_image_layouts[vk_image_ptr][0],
                 vk::ImageLayout::ePresentSrcKHR
-            };
+            });
 
-        InternalBarrier({}, {&barrier_desc, 1});
+        InternalBarrier();
         m_used_swapchain_images.emplace_back(vk_image_ptr->GetSwapchain(), vk_image_ptr->GetSwapchainImageIndex());
         return Result::eSuccess;
     }
@@ -666,8 +658,6 @@ namespace DnmRHI::Vk {
         const auto dst_subresource = To_Vk(desc.dst_subresource);
 
         if (!GetVkDevice.GetVulkanDeviceFeatures().unified_image_layouts) {
-            std::array<ImageBarrierDesc, 2> barrier;
-
             const auto src_layout = GetImageLayout(vk_src_image);
             const auto dst_layout = GetImageLayout(vk_dst_image);
 
@@ -675,7 +665,7 @@ namespace DnmRHI::Vk {
             const b8 dst_need_layout_translation = vk_dst_image->c_CopyDstImageLayout != dst_layout;
 
             if (src_need_layout_translation) {
-                barrier[0] = ImageBarrierDesc{
+                m_image_barriers.emplace_back(ImageBarrierDesc{
                         //TODO:
                         Sync{}, 
                         Sync{vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferRead},
@@ -688,10 +678,10 @@ namespace DnmRHI::Vk {
                             .SetMipmapCount(vk_src_image->GetDesc().mipmap_count),
                         src_layout,
                         vk_src_image->c_CopySrcImageLayout
-                    };
+                    });
             }
             if (dst_need_layout_translation) {
-                barrier[src_need_layout_translation] = ImageBarrierDesc{
+                m_image_barriers.emplace_back(ImageBarrierDesc{
                         //TODO:
                         Sync{}, 
                         Sync{vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferWrite},
@@ -704,11 +694,10 @@ namespace DnmRHI::Vk {
                             .SetMipmapCount(vk_dst_image->GetDesc().mipmap_count),
                         dst_layout,
                         vk_dst_image->c_CopyDstImageLayout
-                    };
+                    });
             }
-
-            InternalBarrier({}, 
-                {barrier.data(), u32(src_need_layout_translation) + dst_need_layout_translation});
+            
+            InternalBarrier();
 
             SetImageLayout(vk_src_image, vk_src_image->c_CopySrcImageLayout);
             SetImageLayout(vk_dst_image, vk_dst_image->c_CopyDstImageLayout);
@@ -740,8 +729,8 @@ namespace DnmRHI::Vk {
 
             const b8 image_need_layout_translation = vk_image->c_CopyDstImageLayout != image_layout;
 
-            if (image_need_layout_translation) {
-                const auto barrier = ImageBarrierDesc{
+            if (image_need_layout_translation) {                    
+                m_image_barriers.emplace_back(
                         //TODO:
                         Sync{}, 
                         Sync{vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferWrite},
@@ -754,10 +743,9 @@ namespace DnmRHI::Vk {
                             .SetMipmapCount(vk_image->GetDesc().mipmap_count),
                         image_layout,
                         vk_image->c_CopySrcImageLayout
-                    };
+                );
+                InternalBarrier();
 
-                InternalBarrier({}, 
-                    {&barrier, 1});
                 SetImageLayout(vk_image, vk_image->c_CopyDstImageLayout);
             }
         }
@@ -788,7 +776,7 @@ namespace DnmRHI::Vk {
             const b8 image_need_layout_translation = vk_image->c_CopySrcImageLayout != image_layout;
 
             if (image_need_layout_translation) {
-                const auto barrier = ImageBarrierDesc{
+                m_image_barriers.emplace_back(
                         //TODO:
                         Sync{}, 
                         Sync{vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferRead},
@@ -801,10 +789,10 @@ namespace DnmRHI::Vk {
                             .SetMipmapCount(vk_image->GetDesc().mipmap_count),
                         image_layout,
                         vk_image->c_CopySrcImageLayout
-                    };
+                    );
 
-                InternalBarrier({}, 
-                    {&barrier, 1});
+                InternalBarrier();
+
                 SetImageLayout(vk_image, vk_image->c_CopySrcImageLayout);
             }
         }
@@ -827,11 +815,6 @@ namespace DnmRHI::Vk {
     // Copy Queue Commands
 
     Result CommandBuffer::IBarrier(std::span<const BarrierDesc> barriers) noexcept {
-        std::vector<ImageBarrierDesc> image_barriers;
-        std::vector<MemoryBarrierDesc> memory_barriers;
-        image_barriers.reserve(barriers.size());
-        memory_barriers.reserve(barriers.size());
-
         for (const auto barrier : barriers) {
             const auto *resource = barrier.resource;
 
@@ -857,7 +840,7 @@ namespace DnmRHI::Vk {
 
             if (resource && resource->c_ResourceType == ResourceType::eImage) {
                 const auto *vk_image = static_cast<const Image *>(resource);
-                image_barriers.emplace_back(
+                m_image_barriers.emplace_back(
                     src_barrier,
                     dst_barrier,
                     vk_image,
@@ -867,25 +850,22 @@ namespace DnmRHI::Vk {
                 );
                 continue;
             }
-            memory_barriers.emplace_back(
+            m_memory_barriers.emplace_back(
                 src_barrier,
                 dst_barrier
             );
         }
 
-        InternalBarrier(memory_barriers, image_barriers);
+        InternalBarrier();
         return Result::eSuccess;
     }
 
     Result CommandBuffer::IInitImage(std::span<const InitImageDesc> descs) noexcept {
-        std::vector<ImageBarrierDesc> image_barriers;
-        image_barriers.reserve(descs.size());
-        
         for (const auto &desc : descs) {
             // TODO: select layout from desc.dst_access_flags
             const auto &vk_image = static_cast<const Vk::Image &>(*desc.image);
 
-            image_barriers.emplace_back(
+            m_image_barriers.emplace_back(
                 Sync{},
                 To_Vk(desc.access_flags),
                 static_cast<Vk::Image *>(desc.image),
@@ -897,7 +877,7 @@ namespace DnmRHI::Vk {
             if (vk_image.c_IsSwapchainImage) m_image_layouts[&vk_image][0] = vk_image.c_DefaultLayout;
         }
 
-        InternalBarrier({}, image_barriers);
+        InternalBarrier();
         return Result::eSuccess;
     }
 
@@ -918,14 +898,9 @@ namespace DnmRHI::Vk {
         return Result::eSuccess;
     }
 
-    void CommandBuffer::InternalBarrier(std::span<const MemoryBarrierDesc> memory_barriers, std::span<const ImageBarrierDesc> image_barriers) {
-        std::vector<vk::ImageMemoryBarrier2> vk_image_barriers;
-        std::vector<vk::MemoryBarrier2> vk_memory_barriers;
-        vk_memory_barriers.reserve(memory_barriers.size());
-        vk_image_barriers.reserve(image_barriers.size());
-
-        for (const auto barrier : memory_barriers) {
-            vk_memory_barriers.emplace_back(
+    void CommandBuffer::InternalBarrier() {
+        for (const auto barrier : m_memory_barriers) {
+            m_vk_memory_barriers.emplace_back(
                 barrier.src_sync.stage,
                 barrier.src_sync.access,
                 barrier.dst_sync.stage,
@@ -933,8 +908,8 @@ namespace DnmRHI::Vk {
             );
         }
 
-        for (const auto &barrier : image_barriers) {
-            vk_image_barriers.emplace_back(
+        for (const auto &barrier : m_image_barriers) {
+            m_vk_image_barriers.emplace_back(
                 barrier.src_sync.stage,
                 barrier.src_sync.access,
                 barrier.dst_sync.stage,
@@ -950,8 +925,14 @@ namespace DnmRHI::Vk {
 
         m_command_buffer.pipelineBarrier2(
             vk::DependencyInfo{}
-                .setMemoryBarriers(vk_memory_barriers)
-                .setImageMemoryBarriers(vk_image_barriers)
+                .setMemoryBarriers(m_vk_memory_barriers)
+                .setImageMemoryBarriers(m_vk_image_barriers)
         );
+
+        m_memory_barriers.clear();
+        m_image_barriers.clear();
+
+        m_vk_image_barriers.clear();
+        m_vk_memory_barriers.clear();
     }
 }

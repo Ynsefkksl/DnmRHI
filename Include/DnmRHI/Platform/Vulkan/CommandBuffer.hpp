@@ -82,6 +82,7 @@ namespace DnmRHI::Vk {
             m_image_layouts[image][stencil] = layout;
         }
 
+        //TODO: i realy need ImageBarrierDesc and MemoryBarrierDesc, i can use vk versions
         struct ImageBarrierDesc {
             Sync src_sync;
             Sync dst_sync;
@@ -96,7 +97,7 @@ namespace DnmRHI::Vk {
             Sync dst_sync;
         };
 
-        void InternalBarrier(std::span<const MemoryBarrierDesc> memory_barriers, std::span<const ImageBarrierDesc> image_barriers);
+        void InternalBarrier();
 
         vk::CommandBuffer m_command_buffer;
         vk::CommandPool m_command_pool;
@@ -109,5 +110,12 @@ namespace DnmRHI::Vk {
             u8 image_index;
         };
         std::vector<UsedSwapchainImageInfo> m_used_swapchain_images;
+
+        // for reduce allocation
+        std::vector<ImageBarrierDesc> m_image_barriers;
+        std::vector<MemoryBarrierDesc> m_memory_barriers;
+
+        std::vector<vk::ImageMemoryBarrier2> m_vk_image_barriers;
+        std::vector<vk::MemoryBarrier2> m_vk_memory_barriers;
     };
 };

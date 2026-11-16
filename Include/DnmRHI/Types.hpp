@@ -8,6 +8,8 @@
 namespace DnmRHI {
     constexpr auto c_Frames_In_Flight_Count = 3u;
     constexpr auto c_Push_Constant_Size = 256u;
+    constexpr auto c_Max_Scissor_Count = 16u;
+    constexpr auto c_Max_Color_Attachments = 8u;
 
 	template<typename T>
 	using PureType = std::remove_cvref_t<std::remove_pointer_t<T>>;
