@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 namespace DnmRHI::Vk {
+    // TODO: image view object
     namespace Utility {
         struct ImageSubresourceHasher {
             size_t operator()(DnmRHI::ImageSubresource subresource) const noexcept {
@@ -27,7 +28,6 @@ namespace DnmRHI::Vk {
         // for swapchain
         explicit Image(Vk::Device &device, vk::Image image, ImageFlags flags, u32 width, u32 height, vk::Format format, Vk::Swapchain *swapchain, u8 swapchain_image_index, std::string_view name) noexcept;
         virtual ~Image() noexcept override { 
-            GetVkDevice.GetDevice().waitIdle();
             for (const auto view : m_image_views | std::views::values)
                 GetVkDevice.GetDevice().destroy(view);
             if (c_SwapchainImageView) GetVkDevice.GetDevice().destroy(c_SwapchainImageView);

@@ -128,15 +128,6 @@ namespace DnmRHI {
                     out_features.swapchain_maintenance1 = !vk_settings.no_swapchain_maintenance1;
                     if (vk_settings.no_swapchain_maintenance1) continue;
                 }
-                else if (block_name == "ShaderStencilExport") {
-                    if (!device_settings.shader_stencil_export) continue;
-                }
-                else if (block_name == "RayTracingInvocationReorder") {
-                    if (!device_settings.ray_tracing_invocation_reorder) continue;
-                }
-                else if (block_name == "OpacityMicromap") {
-                    if (!device_settings.opacity_micromap) continue;
-                }
 
                 optional_blocks.push_back(b);
             }
@@ -498,7 +489,7 @@ namespace DnmRHI::Vk {
                     return std::string(block.blockName) == "DebugUtils";
                 });
 
-        if (GetSettings().validation_layer) {
+        if (GetSettings().api_validation_layer) {
             if (debug_utils_it == supported_blocks.end()) return;
 
             b8 validation_layer_supported;
@@ -551,7 +542,7 @@ namespace DnmRHI::Vk {
                     m_vk_settings.debug_callback_func ? (vk::PFN_DebugUtilsMessengerCallbackEXT)m_vk_settings.debug_callback_func
                         : (vk::PFN_DebugUtilsMessengerCallbackEXT)DebugCallback)
                 .setPUserData(&m_settings.debug_callback)
-                .setPNext(m_settings.validation_layer ? &validataion_features : nullptr)
+                .setPNext(m_settings.api_validation_layer ? &validataion_features : nullptr)
                 ;
 
         const auto instance_create_info
@@ -572,7 +563,7 @@ namespace DnmRHI::Vk {
 
         VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance);
 
-        if (GetSettings().validation_layer) m_debug_messenger = m_instance.createDebugUtilsMessengerEXT(debug_create_info, GetAllocationCallbacks());
+        if (GetSettings().api_validation_layer) m_debug_messenger = m_instance.createDebugUtilsMessengerEXT(debug_create_info, GetAllocationCallbacks());
     }
 
     void Device::CreateDevice(const VpFunctions &vp_functions) noexcept {

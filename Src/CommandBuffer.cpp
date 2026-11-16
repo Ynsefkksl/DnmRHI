@@ -3,7 +3,7 @@
 
 namespace DnmRHI {
     Result CommandBuffer::Begin(bool one_time_submit) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (m_open) {
                 return Result::eInvalidUsage;
             }
@@ -14,7 +14,7 @@ namespace DnmRHI {
     }
 
     Result CommandBuffer::End() noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -25,7 +25,7 @@ namespace DnmRHI {
     }
     
     Result CommandBuffer::Reset() noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -36,7 +36,7 @@ namespace DnmRHI {
 
     // General Queue Commands
     Result CommandBuffer::BeginRenderPass(const RenderPassDesc &desc) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -55,7 +55,7 @@ namespace DnmRHI {
     }
 
     Result CommandBuffer::SetViewport(std::span<const Viewport> viewports) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -68,7 +68,7 @@ namespace DnmRHI {
         return ISetViewport(viewports);
     }
     Result CommandBuffer::SetScissor(std::span<const Scissor> scissor) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -81,7 +81,7 @@ namespace DnmRHI {
         return ISetScissor(scissor);
     }
     Result CommandBuffer::SetStencilRef(u32 front, u32 back) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -95,7 +95,7 @@ namespace DnmRHI {
     }
 
     Result CommandBuffer::Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -116,7 +116,7 @@ namespace DnmRHI {
         return IDraw(vertex_count, instance_count, first_vertex, first_instance);
     }
     Result CommandBuffer::DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -137,7 +137,7 @@ namespace DnmRHI {
         return IDrawIndexed(index_count, instance_count, first_index, vertex_offset, first_instance);
     }
     Result CommandBuffer::DrawIndirect(const DrawIndirectDesc &desc) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -158,7 +158,7 @@ namespace DnmRHI {
         return IDrawIndirect(desc);
     }
     Result CommandBuffer::DrawIndexedIndirect(const DrawIndirectDesc &desc) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -180,7 +180,7 @@ namespace DnmRHI {
     }
 
     Result CommandBuffer::EndRenderPass() noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -199,7 +199,7 @@ namespace DnmRHI {
     }
     
     Result CommandBuffer::BlitImage(const BlitImageDesc &desc) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -212,7 +212,7 @@ namespace DnmRHI {
         return IBlitImage(desc);
     }
     Result CommandBuffer::ResolveImage(const ResolveImageDesc &desc) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -226,7 +226,7 @@ namespace DnmRHI {
     }
     
     Result CommandBuffer::BindIndexBuffer(Buffer &buffer, u64 offset, IndexType index_type) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -239,7 +239,7 @@ namespace DnmRHI {
         return IBindIndexBuffer(buffer, offset, index_type);
     }
     Result CommandBuffer::BindPipeline(GraphicsPipeline &pipeline) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -254,7 +254,7 @@ namespace DnmRHI {
     }
 
     Result CommandBuffer::PrepareForPresent(SyncInfo before_sync, Image &swapchain_image) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -274,7 +274,7 @@ namespace DnmRHI {
     
     // Compute Queue Commands
     Result CommandBuffer::Dispatch(u32 x, u32 y, u32 z) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -291,7 +291,7 @@ namespace DnmRHI {
         return IDispatch(x, y, z);
     }
     Result CommandBuffer::DispatchIndirect(Buffer &buffer, u32 offset) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -309,7 +309,7 @@ namespace DnmRHI {
     }
 
     Result CommandBuffer::BeginConditionalRendering(Buffer &buffer, u32 offset, bool is_inverted) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -327,7 +327,7 @@ namespace DnmRHI {
         return IBeginConditionalRendering(buffer, offset, is_inverted);
     }
     Result CommandBuffer::EndConditionalRendering() noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -346,7 +346,7 @@ namespace DnmRHI {
     }
 
     Result CommandBuffer::PushConstant(const void *data, u32 size, u32 offset) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -363,7 +363,7 @@ namespace DnmRHI {
         return IPushConstant(data, size, offset);
     }
     Result CommandBuffer::BindPipeline(ComputePipeline &pipeline) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -380,7 +380,7 @@ namespace DnmRHI {
 
     // Copy Queue Commands
     Result CommandBuffer::CopyBuffer(const BufferCopyDesc &desc) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -389,7 +389,7 @@ namespace DnmRHI {
         return ICopyBuffer(desc);
     }
     Result CommandBuffer::CopyImage(const ImageCopyDesc &desc) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -398,7 +398,7 @@ namespace DnmRHI {
         return ICopyImage(desc);
     }
     Result CommandBuffer::CopyBufferToImage(const BufferImageCopyDesc &desc) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -407,7 +407,7 @@ namespace DnmRHI {
         return ICopyBufferToImage(desc);
     }
     Result CommandBuffer::CopyImageToBuffer(const BufferImageCopyDesc &desc) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -421,7 +421,7 @@ namespace DnmRHI {
     // Copy Queue Commands
 
     Result CommandBuffer::Barrier(std::span<const BarrierDesc> barriers) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -435,7 +435,7 @@ namespace DnmRHI {
     }
 
     Result CommandBuffer::InitImage(std::span<const InitImageDesc> descs) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -449,7 +449,7 @@ namespace DnmRHI {
     }
 
     Result CommandBuffer::BeginDebugMarker(std::string_view name, std::array<u8, 4> color) noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }
@@ -463,7 +463,7 @@ namespace DnmRHI {
         return IBeginDebugMarker(name, color);
     }
     Result CommandBuffer::EndDebugMarker() noexcept {
-        if (GetDevice().GetSettings().debug_mode) {
+        if (GetDevice().GetSettings().rhi_validation) {
             if (!m_open) {
                 return Result::eInvalidUsage;
             }

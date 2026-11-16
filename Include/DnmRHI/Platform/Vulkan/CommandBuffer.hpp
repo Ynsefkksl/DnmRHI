@@ -11,7 +11,6 @@ namespace DnmRHI::Vk {
     public:
         explicit CommandBuffer(Vk::Device &device, const CommandBufferDesc &desc) noexcept;
         virtual ~CommandBuffer() noexcept override {
-            GetVkDevice.GetDevice().waitIdle();
             GetVkDevice.GetDevice().destroy(m_command_pool, GetVkDevice.GetAllocationCallbacks());
         }
 

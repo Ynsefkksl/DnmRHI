@@ -10,12 +10,12 @@ int main() {
         std::println("name device: {}", device_info.properties.name);
         auto *device = DnmRHI::CreateVulkanDevice(device_info, 
             DnmRHI::DeviceSettings{}
-                .SetShaderDebug(true)
-                .SetValidationLayer(true),
+                .SetRHIValidation(true)
+                .SetApiValidationLayer(true),
             DnmRHI::VulkanSettings{}
         ).value();
         device->Init();
-        std::shared_ptr<DnmRHI::Image> image;
+
         delete device;
     }
 }

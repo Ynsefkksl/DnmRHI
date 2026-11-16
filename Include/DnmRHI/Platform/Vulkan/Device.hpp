@@ -96,14 +96,6 @@ namespace DnmRHI::Vk {
         [[nodiscard]] auto *GetAllocator() const noexcept { return m_vma_allocator; }
         [[nodiscard]] auto *GetAllocationCallbacks() const noexcept { return m_vk_alloc_callbacks; }
 
-        [[nodiscard]] auto GetGeneralQueue() const noexcept { return m_queue_families[static_cast<u32>(QueueType::eGeneral)]; }
-        [[nodiscard]] auto GetComputeQueue() const noexcept { return m_queue_families[static_cast<u32>(QueueType::eCompute)]; }
-        [[nodiscard]] auto GetCopyQueue() const noexcept { return m_queue_families[static_cast<u32>(QueueType::eCopy)]; }
-
-        [[nodiscard]] auto GetGeneralQueueFamilyIndex() const noexcept { return m_queue_families[static_cast<u32>(QueueType::eGeneral)]; }
-        [[nodiscard]] auto GetComputeQueueFamilyIndex() const noexcept { return m_queue_families[static_cast<u32>(QueueType::eCompute)]; }
-        [[nodiscard]] auto GetCopyQueueFamilyIndex() const noexcept { return m_queue_families[static_cast<u32>(QueueType::eCopy)]; }
-
         [[nodiscard]] auto GetQueue(QueueType type) const noexcept {
             return m_queues[static_cast<u32>(type)];
         }
@@ -111,6 +103,14 @@ namespace DnmRHI::Vk {
         [[nodiscard]] auto GetQueueFamilyIndex(QueueType type) const noexcept {
             return m_queue_families[static_cast<u32>(type)];
         }
+
+        [[nodiscard]] auto GetGeneralQueue() const noexcept { return GetQueue(QueueType::eGeneral); }
+        [[nodiscard]] auto GetComputeQueue() const noexcept { return GetQueue(QueueType::eCompute); }
+        [[nodiscard]] auto GetCopyQueue() const noexcept { return GetQueue(QueueType::eCopy); }
+
+        [[nodiscard]] auto GetGeneralQueueFamilyIndex() const noexcept { return GetQueueFamilyIndex(QueueType::eGeneral); }
+        [[nodiscard]] auto GetComputeQueueFamilyIndex() const noexcept { return GetQueueFamilyIndex(QueueType::eCompute); }
+        [[nodiscard]] auto GetCopyQueueFamilyIndex() const noexcept { return GetQueueFamilyIndex(QueueType::eCopy); }
 
         [[nodiscard]] auto *GetDescriptorManager() const noexcept { return m_descriptor_manager; }
 

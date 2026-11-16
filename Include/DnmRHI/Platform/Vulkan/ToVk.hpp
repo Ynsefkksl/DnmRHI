@@ -102,7 +102,6 @@ namespace DnmRHI::Vk {
 
     [[nodiscard]] constexpr auto To_Vk(DnmRHI::QueueType type) noexcept {
         switch (type) {
-            case QueueType::eNone: return vk::QueueFlagBits{};
             case QueueType::eGeneral: return vk::QueueFlagBits::eGraphics;
             case QueueType::eCompute: return vk::QueueFlagBits::eCompute;
             case QueueType::eCopy: return vk::QueueFlagBits::eTransfer;

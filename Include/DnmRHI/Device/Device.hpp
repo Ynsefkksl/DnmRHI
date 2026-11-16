@@ -93,29 +93,18 @@ namespace DnmRHI {
         u32 sampler_count{2'000};
 
         b8 shader_debug: 1{};
-        b8 debug_mode: 1{};
         DebugCallbackFn debug_callback{};
-        // TODO: validation settings
-        b8 validation_layer: 1{};
-        // this can be broke nsight, rgp etc.
+        b8 rhi_validation: 1{};
+        b8 api_validation_layer: 1{};
         b8 gpu_assisted_validaiton: 1{};
-
-        // even if the feature is not supported, this value can be true, but it does nothing
-        b8 shader_stencil_export: 1{}; 
-        b8 ray_tracing_invocation_reorder: 1{};
-        b8 opacity_micromap: 1{};
-
+        
         constexpr auto &SetResourceCount(u32 resource_count) noexcept { this->resource_count = resource_count; return *this; }
         constexpr auto &SetSamplerCount(u32 sampler_count) noexcept { this->sampler_count = sampler_count; return *this; }
 
         constexpr auto &SetDebugCallback(DebugCallbackFn callback) noexcept { this->debug_callback = std::move(callback); return *this; }
-        constexpr auto &SetShaderDebug(b8 shader_debug) noexcept { this->shader_debug = shader_debug; return *this; }
-        constexpr auto &SetDisableValidation(b8 disable_validation) noexcept { this->debug_mode = disable_validation; return *this; }
-        constexpr auto &SetValidationLayer(b8 validation_layer) noexcept { this->validation_layer = validation_layer; return *this; }
+        constexpr auto &SetRHIValidation(b8 rhi_validation) noexcept { this->rhi_validation = rhi_validation; return *this; }
+        constexpr auto &SetApiValidationLayer(b8 api_validation_layer) noexcept { this->api_validation_layer = api_validation_layer; return *this; }
         constexpr auto &SetGpuAssistedValidation(b8 gpu_assisted_validaiton) noexcept { this->gpu_assisted_validaiton = gpu_assisted_validaiton; return *this; }
-        constexpr auto &SetShaderStencilExport(b8 shader_stencil_export) noexcept { this->shader_stencil_export = shader_stencil_export; return *this; }
-        constexpr auto &SetRayTracingInvocationReorder(b8 ray_tracing_invocation_reorder) noexcept { this->ray_tracing_invocation_reorder = ray_tracing_invocation_reorder; return *this; }
-        constexpr auto &SetOpacityMicromap(b8 opacity_micromap) noexcept { this->opacity_micromap = opacity_micromap; return *this; }
     };
 
     struct DeviceInfo {
@@ -138,10 +127,10 @@ namespace DnmRHI {
     protected:
         explicit Device(const DeviceInfo &info, DeviceSettings settings) : m_device_info(info), m_settings(settings) {
             if (m_settings.gpu_assisted_validaiton)
-                m_settings.validation_layer = true;
+                m_settings.api_validation_layer = true;
 
-            if (m_settings.validation_layer)
-                m_settings.debug_mode = true;
+            if (m_settings.api_validation_layer)
+                m_settings.rhi_validation = true;
         }
     public:
         virtual ~Device();
@@ -177,12 +166,6 @@ namespace DnmRHI {
         void Message(MessageSeverity severty, MessageCatagory catagory, MessageID message_id, std::string_view message) {
             if (m_settings.debug_callback) m_settings.debug_callback(severty, catagory, message_id, message);
         }
-
-        // helpers
-        [[nodiscard]] auto IsNvidia() const noexcept { return m_device_info.properties.vendor == GpuVendor::eNvidia; }
-        [[nodiscard]] auto IsAmd() const noexcept { return m_device_info.properties.vendor == GpuVendor::eAmd; }
-        [[nodiscard]] auto IsIntel() const noexcept { return m_device_info.properties.vendor == GpuVendor::eIntel; }
-        [[nodiscard]] auto IsQualcomm() const noexcept { return m_device_info.properties.vendor == GpuVendor::eQualcomm; }
     protected:
         virtual Result IInit() noexcept = 0;
         virtual Result IWaitIdle() noexcept = 0;

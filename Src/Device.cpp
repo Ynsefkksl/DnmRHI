@@ -162,7 +162,7 @@ namespace DnmRHI {
     static constexpr b8 CheckDesc(Device &device, const CommandBufferDesc &desc) noexcept {
         b8 is_valid = true;
         
-        if (desc.queue_type == QueueType::eNone || desc.queue_type == QueueType::Count) {
+        if (desc.queue_type == QueueType::Count) {
             is_valid = false;
         }
 
@@ -275,7 +275,7 @@ namespace DnmRHI {
     }
 
     Result Device::Init() noexcept {
-        if (GetSettings().debug_mode) {
+        if (GetSettings().rhi_validation) {
             // is already initialized
             if (m_shader_compiler)
                 return Result::eInvalidUsage;
@@ -290,7 +290,7 @@ namespace DnmRHI {
     }
 
     ResultOr<Buffer *> Device::CreateBuffer(const BufferDesc &desc) noexcept {
-        if (GetSettings().debug_mode) {
+        if (GetSettings().rhi_validation) {
             if (!CheckDesc(*this, desc))
                 return std::unexpected(Result::eInvalidParameter);
         }
@@ -299,7 +299,7 @@ namespace DnmRHI {
     }
 
     ResultOr<Image *> Device::CreateImage(const ImageDesc &desc) noexcept {
-        if (GetSettings().debug_mode) {
+        if (GetSettings().rhi_validation) {
             if (!CheckDesc(*this, desc))
                 return std::unexpected(Result::eInvalidParameter);
         }
@@ -308,7 +308,7 @@ namespace DnmRHI {
     }
 
     ResultOr<CommandBuffer *> Device::CreateCommandBuffer(const CommandBufferDesc &desc) noexcept {
-        if (GetSettings().debug_mode) {
+        if (GetSettings().rhi_validation) {
             if (!CheckDesc(*this, desc))
                 return std::unexpected(Result::eInvalidParameter);
         }
@@ -330,7 +330,7 @@ namespace DnmRHI {
     }
 
     ResultOr<Semaphore *> Device::CreateSemaphore(const SemaphoreDesc &desc) noexcept {
-        if (GetSettings().debug_mode) {
+        if (GetSettings().rhi_validation) {
             if (!CheckDesc(*this, desc))
                 return std::unexpected(Result::eInvalidParameter);
         }
@@ -338,7 +338,7 @@ namespace DnmRHI {
     }
 
     ResultOr<Swapchain *> Device::CreateSwapchain(const SwapchainDesc &desc) noexcept {
-        if (GetSettings().debug_mode) {
+        if (GetSettings().rhi_validation) {
             if (!CheckDesc(*this, desc))
                 return std::unexpected(Result::eInvalidParameter);
         }
@@ -346,7 +346,7 @@ namespace DnmRHI {
     }
 
     ResultOr<Shader *> Device::CreateShader(const ShaderDesc &desc) noexcept {
-        if (GetSettings().debug_mode) {
+        if (GetSettings().rhi_validation) {
             if (!CheckDesc(*this, desc))
                 return std::unexpected(Result::eInvalidParameter);
         }
@@ -363,7 +363,7 @@ namespace DnmRHI {
     Result Device::SetUniformBufferBindlessIndex(u32 index, DnmRHI::Buffer &buffer, Subresource subresource) noexcept {
         BufferSubresource subres(subresource);
         
-        if (GetSettings().debug_mode) {
+        if (GetSettings().rhi_validation) {
             if (m_settings.resource_count <= index) {
                 return Result::eInvalidParameter;
             }
@@ -383,7 +383,7 @@ namespace DnmRHI {
     Result Device::SetSampledImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
         ImageSubresource subres(subresource);
 
-        if (GetSettings().debug_mode) {
+        if (GetSettings().rhi_validation) {
             if (m_settings.resource_count <= index) {
                 return Result::eInvalidParameter;
             }
@@ -401,7 +401,7 @@ namespace DnmRHI {
     }
 
     Result Device::SetStorageImageBindlessIndex(u32 index, DnmRHI::Image &image, Subresource subresource) noexcept {
-        if (GetSettings().debug_mode) {
+        if (GetSettings().rhi_validation) {
             if (m_settings.resource_count <= index) {
                 return Result::eInvalidParameter;
             }
@@ -420,7 +420,7 @@ namespace DnmRHI {
     }
 
     Result Device::SetSamplerBindlessIndex(u32 index, const SamplerDesc &sampler) noexcept {
-        if (GetSettings().debug_mode) {
+        if (GetSettings().rhi_validation) {
             if (m_settings.sampler_count <= index) {
                 return Result::eInvalidParameter;
             }
@@ -430,7 +430,7 @@ namespace DnmRHI {
     }
 
     Result Device::SubmitCommandBuffer(const CommandBufferSubmitDesc &desc) noexcept {
-        if (GetSettings().debug_mode) {
+        if (GetSettings().rhi_validation) {
             QueueType queue_type{};
             
             if (desc.command_buffers.size() > 0) {
@@ -464,7 +464,7 @@ namespace DnmRHI {
     }
 
     Result Device::WaitSemaphore(const WaitSemaphoreDesc &desc) noexcept {
-        if (GetSettings().debug_mode) {
+        if (GetSettings().rhi_validation) {
             for (const auto &wait_semaphore : desc.semaphores) {
                 if (!wait_semaphore.semaphore) {
                     return Result::eInvalidParameter;
@@ -476,7 +476,7 @@ namespace DnmRHI {
     }
 
     Result Device::Present(const PresentDesc &desc) noexcept {
-        if (GetSettings().debug_mode) {
+        if (GetSettings().rhi_validation) {
             if (!desc.swapchain) {
                 return Result::eInvalidParameter;
             }

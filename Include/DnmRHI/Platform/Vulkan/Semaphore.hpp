@@ -8,7 +8,6 @@ namespace DnmRHI::Vk {
     public:
         explicit Semaphore(Vk::Device &device, const SemaphoreDesc &desc) noexcept;
         virtual ~Semaphore() override { 
-            GetVkDevice.GetDevice().waitIdle();
             GetVkDevice.GetDevice().destroy(m_semaphore, GetVkDevice.GetAllocationCallbacks());
         }
 

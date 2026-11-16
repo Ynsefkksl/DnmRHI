@@ -1,13 +1,5 @@
 #pragma once
 
-// TODO: this must be function
-static const uint Subgroup_Size =
-#ifdef SUBGROUP_SIZE
-    SUBGROUP_SIZE;
-#else
-    64;
-#endif
-
 __intrinsic_op(218)
 T __spirvLoadDescriptorFromHeap<T>(uint heap, uint index);
 
@@ -19,8 +11,7 @@ uint __spirvResourceHeap();
 
 interface IBindlessDescriptor {};
 
-// TODO: we need data layouts
-__generic<T, L : IBufferDataLayout = Std430DataLayout>
+__generic<T, L : IBufferDataLayout = ScalarDataLayout>
 typealias UniformBuffer = ConstantBuffer<T, L>;
 
 __generic<T : ITexelElement>

@@ -269,7 +269,7 @@ namespace DnmRHI::Vk {
 
             std::vector<vk::Semaphore> present_semaphores;
             present_semaphores.reserve(image_count);
-            for (size_t i = 0; i < image_count; ++i) {
+            for (u32 i = 0; i < image_count; ++i) {
                 present_semaphores.push_back(device.createSemaphore({}, GetVkDevice.GetAllocationCallbacks()));
             }
 
@@ -286,7 +286,7 @@ namespace DnmRHI::Vk {
                     .setLevel(vk::CommandBufferLevel::ePrimary))[0];
 
             std::vector<bool> transitioned(image_count, false);
-            size_t remaining = image_count;
+            u32 remaining = image_count;
 
             while (remaining > 0) {
                 device.waitIdle();
@@ -330,12 +330,14 @@ namespace DnmRHI::Vk {
                 cmd_buffer.end();
 
                 constexpr vk::PipelineStageFlags wait_stage{vk::PipelineStageFlagBits::eAllCommands};
+
                 const auto submit_info
                     = vk::SubmitInfo{}
                         .setCommandBuffers(cmd_buffer)
                         .setWaitDstStageMask(wait_stage)
                         .setWaitSemaphores(acquire_semaphore)
                         .setSignalSemaphores(present_semaphores[image_index]);
+
                 queue.submit(submit_info);
 
                 const auto present_info
@@ -344,7 +346,7 @@ namespace DnmRHI::Vk {
                         .setSwapchains(m_swapchain)
                         .setImageIndices(image_index);
 
-                std::ignore = queue.presentKHR(present_info);
+                [[maybe_unused]] auto result = queue.presentKHR(present_info);
 
                 if (!transitioned[image_index]) {
                     transitioned[image_index] = true;

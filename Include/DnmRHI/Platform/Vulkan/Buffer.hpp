@@ -10,7 +10,6 @@ namespace DnmRHI::Vk {
         explicit InternalBuffer(Vk::Device &device, const BufferDesc &desc);
 
         ~InternalBuffer() noexcept {
-            m_device.GetDevice().waitIdle();
             if (!m_imported_mem) {
                 vmaDestroyBuffer(m_device.GetAllocator(), m_buffer, m_alloc);
                 return;
